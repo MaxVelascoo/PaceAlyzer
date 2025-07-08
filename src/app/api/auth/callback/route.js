@@ -58,8 +58,10 @@ export async function GET(req) {
 
   // Guardar el strava_id para el siguiente paso (por ejemplo en cookie o query)
   // Aquí te lo paso por query para simplificar:
-  const redirectUrl = new URL('/complete-registration', req.url);
-  redirectUrl.searchParams.set('strava_id', athlete.id);
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const redirectUrl = new URL(`/complete-registration?strava_id=${athlete.id}`, BASE_URL);
+
+
 
   return NextResponse.redirect(redirectUrl);
 }
