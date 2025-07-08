@@ -1,7 +1,7 @@
 export default function Home() {
   const STRAVA_CLIENT_ID = 165942; // <-- Sustituye esto
-  const REDIRECT_URI = "http://localhost:3000/api/auth/callback"; // <-- Asegúrate que está en la config de Strava
-
+  
+  const REDIRECT_URI = process.env.NEXT_PUBLIC_STRAVA_REDIRECT_URI!;
   const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=read,activity:read_all`;
 
   return (
