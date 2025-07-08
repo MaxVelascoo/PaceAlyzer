@@ -11,7 +11,8 @@ export async function GET(request: Request) {
 
   const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID!;
   const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET!;
-  const REDIRECT_URI = "http://localhost:3000/api/auth/callback";
+  const REDIRECT_URI = process.env.STRAVA_REDIRECT_URI!;
+  
 
   const tokenRes = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
