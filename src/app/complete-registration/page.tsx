@@ -56,7 +56,7 @@ export default function CompleteRegistration() {
         // Redirigir o mostrar mensaje éxito
         router.push('/welcome'); 
       }
-    } catch (err) {
+    } catch {
       setError('Error de red o servidor.');
     } finally {
       setLoading(false);
