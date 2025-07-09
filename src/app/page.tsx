@@ -1,8 +1,15 @@
 export default function Home() {
-  const STRAVA_CLIENT_ID = 165942; // <-- Sustituye esto
-  
+  // Usa la variable de entorno en lugar de hardcodear el client ID
+  const STRAVA_CLIENT_ID = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!;
   const REDIRECT_URI = process.env.NEXT_PUBLIC_STRAVA_REDIRECT_URI!;
-  const authUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=read,activity:read_all`;
+  const authUrl = [
+    `https://www.strava.com/oauth/authorize`,
+    `?client_id=${STRAVA_CLIENT_ID}`,
+    `&response_type=code`,
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`,
+    `&approval_prompt=auto`,
+    `&scope=read,activity:read_all`,
+  ].join('');
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-white text-gray-900">
@@ -13,9 +20,15 @@ export default function Home() {
       <div className="mt-8">
         <a
           href={authUrl}
-          className="bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          Conectar con Strava
+          <img
+            src="/strava-connect-button-orange.svg"
+            alt="Connect with Strava"
+            width={160}
+            height={48}
+          />
         </a>
       </div>
     </main>
