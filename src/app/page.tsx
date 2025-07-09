@@ -19,12 +19,12 @@ export default function Home() {
       <div
         className="absolute w-[600px] h-[600px] rounded-full
                    bg-gradient-to-tr from-orange-500 to-pink-500
-                   opacity-20 -top-80 -left-80"
+                   opacity-40 -top-40 -left-40 pointer-events-none"
       />
       <div
         className="absolute w-[500px] h-[500px] rounded-full
                    bg-gradient-to-br from-pink-500 to-orange-500
-                   opacity-20 -bottom-80 -right-80"
+                   opacity-40 -bottom-40 -right-40 pointer-events-none"
       />
 
       <div className="relative z-10 max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
