@@ -1,16 +1,12 @@
-/* app/globals.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Variables de color */
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
-  
-/* Modo oscuro */
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -18,7 +14,6 @@
   }
 }
 
-/* Estilos base */
 body {
   background-color: var(--background);
   color: var(--foreground);
