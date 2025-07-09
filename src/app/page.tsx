@@ -17,13 +17,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-6">
-      {/* Logo */}
       <div className="mb-8">
         <Image
           src="/logo.png"
           alt="Pacealyzer Logo"
-          width={120}
-          height={120}
+          width={140}
+          height={140}
           className="rounded-full"
         />
       </div>
