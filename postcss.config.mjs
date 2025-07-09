@@ -1,10 +1,10 @@
-// src/postcss.config.mjs
-import postcssPlugin from '@tailwindcss/postcss';
-import autoprefixer from 'autoprefixer';
+// postcss.config.mjs
+import tailwind from '@tailwindcss/postcss'
+import autoprefixer from 'autoprefixer'
 
 export default {
   plugins: [
-    postcssPlugin(),
+    tailwind(),
     autoprefixer(),
   ],
-};
+}
