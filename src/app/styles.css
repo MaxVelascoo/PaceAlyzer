@@ -95,8 +95,9 @@
 }
 
 .logo {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 10px; /* Ajusta esto para más separación */
 }
 
 .nav {
@@ -163,4 +164,23 @@
   text-align: center;
   margin-top: 20px;
   font-size: 0.9rem;
+}
+
+.footer-bottom {
+  width: 100%;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.footer-bottom-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.strava-logo {
+  display: inline-block;
+  vertical-align: middle;
 }

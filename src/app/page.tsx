@@ -18,7 +18,7 @@ const HomePage: React.FC = () => {
         </h1>
         <p className={`subtitle ${inter.className}`}>
           Bienvenido a PaceAlyzer, tu entrenador virtual inteligente para ciclistas. <br />
-          Maximiza tu rendimiento con informes personalizados y entrenamientos adaptados.
+          Maximiza tu rendimiento con informes personalizados impuslados por IA.
         </p>
         <button className="start-button" onClick={() => router.push('/start')}>
           Empezar
