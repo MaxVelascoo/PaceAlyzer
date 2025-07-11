@@ -1,6 +1,9 @@
 'use client';
 import React, { useState } from 'react';
+import { Syne } from 'next/font/google';
 import Image from 'next/image';
+
+const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
 const StartPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -37,7 +40,7 @@ const StartPage: React.FC = () => {
   };
 
   return (
-    <div className="form-container">
+    <div className={`form-container ${syne.className}`}>
       <h2>Completa tus datos</h2>
       <form className="form">
         <input name="nombre" placeholder="Nombre" onChange={handleChange} />

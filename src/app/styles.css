@@ -98,7 +98,14 @@
   font-size: 1.75rem;
   font-weight: 700;
   margin-bottom: 10px; /* Ajusta esto para más separación */
+  color: white;
+  text-decoration: none;
 }
+
+.logo:hover {
+  text-decoration: underline;
+}
+
 
 .nav {
   display: flex;
@@ -183,4 +190,19 @@
 .strava-logo {
   display: inline-block;
   vertical-align: middle;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
+.nav-link:visited {
+  color: white;
 }

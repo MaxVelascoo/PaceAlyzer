@@ -7,7 +7,12 @@ const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 export const metadata = {
   title: 'PaceAlyzer',
   description: 'Entrenador virtual inteligente para ciclistas',
+  icons: {
+    icon: '/symbol.png',
+  },
 };
+
+
 
 export default function RootLayout({
   children,
@@ -20,9 +25,10 @@ export default function RootLayout({
         {/* Header */}
         <header className="header">
           <div className="header-content">
-            <span className={`logo ${syne.className}`}>PaceAlyzer</span>
+            <Link href="/" className={`logo ${syne.className}`}>PaceAlyzer</Link>
+
             <nav className="nav">
-              <Link href="/" className="nav-link">Inicio</Link>
+              <Link href="/" className={`nav-link ${syne.className}`}>Inicio</Link>
             </nav>
           </div>
         </header>
