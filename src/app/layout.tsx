@@ -29,7 +29,7 @@ export default function RootLayout({
         {/* Header */}
         <header className="w-full py-6 bg-white/80 shadow-md flex items-center justify-center mb-4">
           <div className="flex items-center gap-3">
-            <span className="text-2xl font-bold text-blue-600">⚡ WattCoach</span>
+            <span className="text-2xl font-bold text-pink-600">⚡ PaceAlyzer</span>
             <span className="text-sm text-gray-500">Tu entrenador virtual inteligente</span>
           </div>
         </header>
@@ -44,25 +44,29 @@ export default function RootLayout({
           <div className="mb-2 flex gap-4">
             <a
               href="/privacy"
-              className="underline hover:text-blue-600 transition-colors"
+              className="underline hover:text-pink-600 transition-colors"
             >
               Política de privacidad
             </a>
             <span>|</span>
             <a
               href="/terms"
-              className="underline hover:text-blue-600 transition-colors"
+              className="underline hover:text-pink-600 transition-colors"
             >
               Términos y condiciones
             </a>
           </div>
-          <div className="flex gap-3">
-            <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-              <svg width="20" height="20" fill="currentColor" className="text-blue-400 hover:text-blue-600 transition-colors"><path d="M20 3.924a8.19 8.19 0 0 1-2.357.646A4.118 4.118 0 0 0 19.448 2.3a8.224 8.224 0 0 1-2.605.996A4.107 4.107 0 0 0 9.85 7.03a11.65 11.65 0 0 1-8.457-4.287a4.106 4.106 0 0 0 1.27 5.482A4.073 4.073 0 0 1 .8 7.13v.052a4.108 4.108 0 0 0 3.292 4.025a4.095 4.095 0 0 1-1.085.144c-.265 0-.522-.026-.772-.075a4.108 4.108 0 0 0 3.834 2.85A8.233 8.233 0 0 1 0 17.544a11.616 11.616 0 0 0 6.29 1.844c7.547 0 11.675-6.155 11.675-11.495c0-.175-.004-.349-.012-.522A8.18 8.18 0 0 0 20 3.924z"/></svg>
-            </a>
-            {/* Puedes agregar más íconos aquí */}
+          {/* Powered by Strava SVG */}
+          <div className="flex items-center justify-center mt-2">
+            <img
+              src="/api_logo_pwrdBy_strava_stack_black.svg"
+              alt="Powered by Strava"
+              width={120}
+              height={40}
+              style={{ maxWidth: "100%", height: "auto" }}
+            />
           </div>
-          <div className="mt-2 text-xs text-gray-400">© 2025 WattCoach</div>
+          <div className="mt-2 text-xs text-gray-400">© 2025 PaceAlyzer</div>
         </footer>
       </body>
     </html>
