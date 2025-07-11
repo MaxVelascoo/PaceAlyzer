@@ -15,3 +15,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
 }
+
+/* Animación pulse para los círculos degradados */
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse {
+  animation: pulse 4s infinite;
+}

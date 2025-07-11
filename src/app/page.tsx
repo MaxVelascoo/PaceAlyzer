@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -19,30 +18,32 @@ export default function Home() {
     <main className="relative flex items-center justify-center min-h-screen bg-gray-50 overflow-hidden px-4">
       {/* fondos degradados */}
       <div
-        className="absolute w-[500px] h-[500px] rounded-full
-                   bg-gradient-to-tr from-orange-500 to-pink-500
-                   opacity-20 -top-32 -left-32 pointer-events-none"
+        className="absolute z-0 w-[420px] h-[420px] md:w-[520px] md:h-[520px] rounded-full
+                   bg-gradient-to-tr from-orange-400 to-pink-400
+                   opacity-30 blur-2xl animate-pulse
+                   top-[-120px] left-[-120px]"
       />
       <div
-        className="absolute w-[400px] h-[400px] rounded-full
-                   bg-gradient-to-br from-pink-500 to-orange-500
-                   opacity-20 -bottom-32 -right-32 pointer-events-none"
+        className="absolute z-0 w-[320px] h-[320px] md:w-[420px] md:h-[420px] rounded-full
+                   bg-gradient-to-br from-pink-400 to-orange-400
+                   opacity-30 blur-2xl animate-pulse
+                   bottom-[-100px] right-[-100px]"
       />
 
       {/* tarjeta */}
-      <div className="relative z-10 max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center">
+      <div className="relative z-10 max-w-lg w-full bg-white/90 rounded-3xl shadow-2xl border border-gray-100 p-8 text-center backdrop-blur-md">
         {/* símbolo y wordmark juntos */}
         <div className="flex flex-col items-center mb-6 space-y-2">
           {/* símbolo */}
           <Image
-            src="/symbol.png"           // tu icono de producto
+            src="/symbol.png"
             alt="PaceAlyzer Icon"
             width={96}
             height={96}
           />
           {/* wordmark */}
           <Image
-            src="/wordmark.png"         // tu “PaceAlyzer” como imagen
+            src="/wordmark.png"
             alt="PaceAlyzer Wordmark"
             width={240}
             height={60}
@@ -50,13 +51,13 @@ export default function Home() {
         </div>
 
         {/* slogan */}
-        <p className="text-xl text-gray-800 font-medium mb-4">
+        <p className="text-xl text-gray-800 font-semibold mb-4">
           Analiza. Optimiza. Supera tus límites.
         </p>
 
         {/* descripción */}
         <p className="text-gray-600 mb-6">
-          Transforma tus datos de Strava en planes de entrenamiento inteligentes  
+          Transforma tus datos de Strava en planes de entrenamiento inteligentes
           basados en IA, diseñados para maximizar tu rendimiento.
         </p>
 
