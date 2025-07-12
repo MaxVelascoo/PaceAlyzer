@@ -38,15 +38,29 @@ export default function RootLayout({
                 />
               </Link>
             </div>
-            
+
             <div className="header-right">
               <nav className="nav">
-                <Link href="/" className={`nav-link ${syne.className}`}>Inicio</Link>
+                <Link
+                  href="/dashboard"
+                  className={`nav-link dashboard-link ${syne.className}`}
+                >
+                  Dashboard
+                </Link>
+                <Link href="/" className={`nav-link ${syne.className}`}>
+                  Inicio
+                </Link>
+                <Link
+                  href="#acerca-del-producto"
+                  className={`nav-link ${syne.className}`}
+                >
+                  Acerca del producto
+                </Link>
               </nav>
             </div>
           </div>
-
         </header>
+
 
         {/* Main */}
         <main>{children}</main>

@@ -59,12 +59,40 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Sección inferior */}
-      <div ref={productRef} className="product-section">
+      <div
+        id="acerca-del-producto"
+        ref={productRef}
+        className="product-section"
+      >
         <div className={`product-content fade-in-section ${productVisible ? 'visible' : ''}`}>
           <h2 className={syne.className}>¿Qué es PaceAlyzer?</h2>
           <p className={inter.className}>
             PaceAlyzer es una plataforma que transforma tus datos de ciclismo en recomendaciones inteligentes de entrenamiento. Conéctate a Strava y recibe análisis detallados, seguimiento de progresos y sugerencias personalizadas para maximizar tu rendimiento.
           </p>
+
+                    {/* Diagrama de workflow visual */}
+          <div className="workflow">
+            <div className="node">
+              <img src="/strava-icon.png" alt="Strava" />
+              <span>Actividad subida (Strava)</span>
+            </div>
+            <div className="arrow">→</div>
+            <div className="node">
+              <img src="/ai-icon.png" alt="IA" />
+              <span>Análisis inteligente</span>
+            </div>
+            <div className="arrow">→</div>
+            <div className="node">
+              <img src="/whatsapp-icon.png" alt="WhatsApp" />
+              <span>Notificación WhatsApp</span>
+            </div>
+            <div className="arrow">or</div>
+            <div className="node">
+              <img src="/email-icon.png" alt="Email" />
+              <span>Email personalizado</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </>

@@ -1,5 +1,5 @@
-'use client';
-import React from 'react';
+// src/app/dashboard/page.tsx
+import styles from './page.module.css';
 import { Syne, Inter } from 'next/font/google';
 import Link from 'next/link';
 
@@ -8,26 +8,33 @@ const inter = Inter({ subsets: ['latin'], weight: ['400'] });
 
 export default function DashboardPage() {
   return (
-    <main
-      className="min-h-screen bg-cover bg-center bg-no-repeat text-white px-6 py-20"
-      style={{ backgroundImage: "url('/background.png')" }}
-    >
-      <div className="max-w-3xl mx-auto text-left">
-        <h1 className={`text-4xl mb-6 ${syne.className}`}>
+    <main className={styles.root}>
+      <div className={styles.container}>
+        {/* Añade syne.className aquí */}
+        <h1 className={`${styles.title} ${syne.className}`}>
           ¡Bienvenido a PaceAlyzer!
         </h1>
-        <p className={`text-lg mb-8 leading-relaxed ${inter.className}`}>
-          Has conectado exitosamente tu cuenta de Strava. A partir de ahora, PaceAlyzer podrá analizar tus entrenamientos, generar informes personalizados y ayudarte a alcanzar tus objetivos ciclistas con inteligencia adaptativa.
+
+        {/* Y añade inter.className aquí */}
+        <p className={`${styles.description} ${inter.className}`}>
+          Has conectado exitosamente tu cuenta de Strava. …
         </p>
 
-        <div className="space-y-4">
-          <p className={inter.className}>✅ Analiza tu progreso en tiempo real</p>
-          <p className={inter.className}>✅ Recibe recomendaciones de entrenamiento</p>
-          <p className={inter.className}>✅ Explora tus mejores rendimientos</p>
-        </div>
+        <ul className={`${styles.features} ${inter.className}`}>
+          {[
+            'Analiza tu progreso en tiempo real',
+            'Recibe recomendaciones de entrenamiento',
+            'Explora tus mejores rendimientos',
+          ].map((txt) => (
+            <li key={txt} className={styles.featureItem}>
+              <span className={styles.checkIcon}>✔</span>
+              <span>{txt}</span>
+            </li>
+          ))}
+        </ul>
 
         <Link href="/profile">
-          <button className="mt-10 px-6 py-3 bg-white text-black rounded-full font-medium text-lg hover:bg-gray-200 transition">
+          <button className={`${styles.button} ${inter.className}`}>
             Ver mi perfil
           </button>
         </Link>
