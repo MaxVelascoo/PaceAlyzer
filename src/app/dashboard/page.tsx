@@ -1,7 +1,10 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Syne } from 'next/font/google';
-import ProtectedRoute from '@/components/ProtectedRoute'; // asegúrate de tener esta ruta correcta
+import { useUser } from '@/context/userContext';
+import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
@@ -10,6 +13,11 @@ const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', '
 function DashboardContent() {
   const [semanaOffset, setSemanaOffset] = useState(0);
   const [diaSeleccionado, setDiaSeleccionado] = useState(0);
+  const [hasStrava, setHasStrava] = useState<boolean | null>(null);
+
+  const userContext = useUser();
+  const user = userContext?.user;
+  const router = useRouter();
 
   const hoy = new Date();
   const startOfWeek = new Date(hoy);
@@ -25,6 +33,25 @@ function DashboardContent() {
   });
 
   const esSemanaActual = semanaOffset === 0;
+
+  useEffect(() => {
+    const checkStrava = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('strava_accounts')
+        .select('strava_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error || !data?.strava_id) {
+        setHasStrava(false);
+      } else {
+        setHasStrava(true);
+      }
+    };
+
+    checkStrava();
+  }, [user]);
 
   return (
     <div className="dashboard">
@@ -62,6 +89,17 @@ function DashboardContent() {
           {diasConFechas[diaSeleccionado].nombre}, {diasConFechas[diaSeleccionado].numero}
         </h2>
         <p className={syne.className}>No hay entrenamiento de este día.</p>
+
+        {hasStrava === false && (
+          <div className="strava-warning">
+            <p className={syne.className}>
+              Para ver tus entrenamientos, necesitas conectar tu cuenta de Strava.
+            </p>
+            <button className="form-button" onClick={() => router.push('/connect-strava')}>
+              Conectar con Strava
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

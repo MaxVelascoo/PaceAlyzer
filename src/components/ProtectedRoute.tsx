@@ -5,16 +5,23 @@ import { useRouter } from 'next/navigation';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const userContext = useUser();
-  const user = userContext?.user;
-  const router = useRouter();
+  const router    = useRouter();
 
-  useEffect(() => {
-    if (user === null) {
-      router.replace('/start');
-    }
-  }, [user, router]);
+  // Si el contexto es undefined, no hacemos nada (cargando)
+  if (!userContext) return null;
+  const { user } = userContext;
 
-  if (!user) return null; // No mostrar nada mientras redirige
+ useEffect(() => {
+  if (user === null) {
+    router.replace('/start')
+  }
+}, [user, router])
 
-  return <>{children}</>;
+// mientras user === undefined → devuelve null (cargando)
+// si user === null → ya ha disparado replace() arriba
+if (user === undefined || user === null) return null
+
+return <>{children}</>
+
 }
+

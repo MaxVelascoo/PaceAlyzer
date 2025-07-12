@@ -12,24 +12,24 @@ type UserContextType = {
 export const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+   const [user, setUser] = useState<User | null>(null)
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setUser(data?.session?.user ?? null);
-    };
+useEffect(() => {
+  const getSession = async () => {
+    const { data } = await supabase.auth.getSession()
+    setUser(data?.session?.user ?? null)
+  }
+  getSession()
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null)
+  })
+  return () => listener.subscription.unsubscribe()
+}, [])
 
-    getSession();
+// Más abajo, en `useUser()` o donde lo consumas,
+// contempla `undefined` como “cargando”
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
-  }, []);
 
   return (
     <UserContext.Provider value={{ user, setUser }}>

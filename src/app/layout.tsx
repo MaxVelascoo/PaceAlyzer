@@ -1,7 +1,8 @@
 import './styles.css';
 import Link from 'next/link';
 import { Syne } from 'next/font/google';
-import { UserProvider } from '@/context/userContext'; // Asegúrate de que la ruta sea correcta
+import { UserProvider } from '@/context/userContext';
+import Header from '@/components/header'; // nuevo
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
@@ -21,46 +22,11 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        {/* Header */}
-        <header className="header">
-          <div className="header-content">
-            <div className="header-left">
-              <Link href="/" className={`logo ${syne.className}`}>PaceAlyzer</Link>
-            </div>
-
-            <div className="header-center">
-              <Link href="/">
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="header-logo"
-                />
-              </Link>
-            </div>
-
-            <div className="header-right">
-              <nav className="nav">
-                <Link href="/profile" className={`nav-link ${syne.className}`}>
-                  Perfil
-                </Link>
-                <Link href="/dashboard" className={`nav-link dashboard-link ${syne.className}`}>
-                  Dashboard
-                </Link>
-                <Link href="/" className={`nav-link ${syne.className}`}>Inicio</Link>
-                <Link href="#acerca-del-producto" className={`nav-link ${syne.className}`}>
-                  Acerca del producto
-                </Link>
-              </nav>
-            </div>
-          </div>
-        </header>
-
-        {/* Main envuelto en UserProvider */}
         <UserProvider>
+          <Header />
           <main>{children}</main>
         </UserProvider>
 
-        {/* Footer */}
         <footer className="footer">
           <div className="footer-left">
             <h2 className={syne.className}>PaceAlyzer</h2>

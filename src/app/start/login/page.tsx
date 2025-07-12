@@ -28,13 +28,15 @@ const handleLogin = async () => {
 
   if (error) return alert('Error al iniciar sesión: ' + error.message);
 
-  // 🔄 Refrescar contexto manualmente
-  const { data: userData } = await supabase.auth.getUser();
-  userContext?.setUser(userData?.user ?? null);
+  // Forzar recarga del usuario
+  const sessionRes = await supabase.auth.getUser();
+  if (sessionRes.error || !sessionRes.data?.user) {
+    return alert('No se pudo obtener el usuario');
+  }
 
+  // Esto actualizará el contexto automáticamente si el contexto está bien configurado
   router.push('/dashboard');
 };
-
 
 
   return (

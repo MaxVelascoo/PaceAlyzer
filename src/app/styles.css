@@ -258,6 +258,20 @@ html {
   color: #a0a0a0;
 }
 
+.strava-warning {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 2px dashed #ffa200;
+  background-color: #fff5e6;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.strava-warning p {
+  margin-bottom: 1rem;
+  color: #444;
+}
+
 /* workflow styles */
 .workflow-visual {
   margin-top: 60px;

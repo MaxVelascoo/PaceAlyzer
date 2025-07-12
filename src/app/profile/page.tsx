@@ -28,27 +28,23 @@ const [perfil, setPerfil] = useState<PerfilData | null>(null);
 useEffect(() => {
   const fetchPerfil = async () => {
     if (!user) return;
-
     console.log('Obteniendo perfil para ID:', user.id);
-
     const { data, error } = await supabase
       .from('users')
       .select('firstname, lastname, email, telef, ftp, weight')
       .eq('id', user.id)
-      .maybeSingle(); // evita error si no hay ninguna fila
+      .single();
 
-    if (error) {
-      console.error('Error al obtener perfil:', error.message);
-    } else if (!data) {
-      console.warn('No se encontró ningún perfil con ese ID');
-    } else {
-      console.log('Datos de perfil obtenidos:', data);
+    if (!error && data) {
       setPerfil(data);
+    } else {
+      console.log('No se encontró ningún perfil con ese ID');
     }
   };
 
   fetchPerfil();
 }, [user]);
+
 
 
 
