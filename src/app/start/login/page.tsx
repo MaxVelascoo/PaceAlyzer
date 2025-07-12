@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Syne, Inter } from 'next/font/google';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
