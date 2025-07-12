@@ -1,12 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import { Syne } from 'next/font/google';
+import ProtectedRoute from '@/components/ProtectedRoute'; // asegúrate de tener esta ruta correcta
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
 const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-export default function Dashboard() {
+function DashboardContent() {
   const [semanaOffset, setSemanaOffset] = useState(0);
   const [diaSeleccionado, setDiaSeleccionado] = useState(0);
 
@@ -27,41 +28,49 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-  <div className={`mes ${syne.className}`}>
-    {mes.charAt(0).toUpperCase() + mes.slice(1)}
-  </div>
+      <div className={`mes ${syne.className}`}>
+        {mes.charAt(0).toUpperCase() + mes.slice(1)}
+      </div>
 
-  <div className="week-control">
-    <button className="arrow" onClick={() => setSemanaOffset(semanaOffset - 1)}>‹</button>
+      <div className="week-control">
+        <button className="arrow" onClick={() => setSemanaOffset(semanaOffset - 1)}>‹</button>
 
-    <div className="dias-semana">
-      {diasConFechas.map((d, i) => (
+        <div className="dias-semana">
+          {diasConFechas.map((d, i) => (
+            <button
+              key={d.nombre}
+              className={`dia ${syne.className} ${i === diaSeleccionado ? 'activo' : ''}`}
+              onClick={() => setDiaSeleccionado(i)}
+            >
+              <div className="dia-num">{d.numero}</div>
+              <div>{d.nombre}</div>
+            </button>
+          ))}
+        </div>
+
         <button
-          key={d.nombre}
-          className={`dia ${syne.className} ${i === diaSeleccionado ? 'activo' : ''}`}
-          onClick={() => setDiaSeleccionado(i)}
+          className="arrow"
+          onClick={() => setSemanaOffset(semanaOffset + 1)}
+          disabled={esSemanaActual}
         >
-          <div className="dia-num">{d.numero}</div>
-          <div>{d.nombre}</div>
+          ›
         </button>
-      ))}
+      </div>
+
+      <div className="contenido-dia">
+        <h2 className={syne.className}>
+          {diasConFechas[diaSeleccionado].nombre}, {diasConFechas[diaSeleccionado].numero}
+        </h2>
+        <p className={syne.className}>No hay entrenamiento de este día.</p>
+      </div>
     </div>
+  );
+}
 
-    <button
-      className="arrow"
-      onClick={() => setSemanaOffset(semanaOffset + 1)}
-      disabled={esSemanaActual}
-    >
-      ›
-    </button>
-  </div>
-
-  <div className="contenido-dia">
-    <h2 className={syne.className}>
-      {diasConFechas[diaSeleccionado].nombre}, {diasConFechas[diaSeleccionado].numero}
-    </h2>
-    <p className={syne.className}>No hay entrenamiento de este día.</p>
-  </div>
-</div>
+export default function Dashboard() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

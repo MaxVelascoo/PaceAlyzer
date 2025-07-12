@@ -1,6 +1,7 @@
 import './styles.css';
 import Link from 'next/link';
 import { Syne } from 'next/font/google';
+import { UserProvider } from '@/context/userContext'; // Asegúrate de que la ruta sea correcta
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
@@ -11,8 +12,6 @@ export const metadata = {
     icon: '/symbol.png',
   },
 };
-
-
 
 export default function RootLayout({
   children,
@@ -41,19 +40,14 @@ export default function RootLayout({
 
             <div className="header-right">
               <nav className="nav">
-                <Link
-                  href="/dashboard"
-                  className={`nav-link dashboard-link ${syne.className}`}
-                >
+                <Link href="/profile" className={`nav-link ${syne.className}`}>
+                  Perfil
+                </Link>
+                <Link href="/dashboard" className={`nav-link dashboard-link ${syne.className}`}>
                   Dashboard
                 </Link>
-                <Link href="/" className={`nav-link ${syne.className}`}>
-                  Inicio
-                </Link>
-                <Link
-                  href="#acerca-del-producto"
-                  className={`nav-link ${syne.className}`}
-                >
+                <Link href="/" className={`nav-link ${syne.className}`}>Inicio</Link>
+                <Link href="#acerca-del-producto" className={`nav-link ${syne.className}`}>
                   Acerca del producto
                 </Link>
               </nav>
@@ -61,15 +55,15 @@ export default function RootLayout({
           </div>
         </header>
 
-
-        {/* Main */}
-        <main>{children}</main>
+        {/* Main envuelto en UserProvider */}
+        <UserProvider>
+          <main>{children}</main>
+        </UserProvider>
 
         {/* Footer */}
         <footer className="footer">
           <div className="footer-left">
             <h2 className={syne.className}>PaceAlyzer</h2>
-
             <p>651-677-748</p>
             <p>max.velaso.rajo@gmail.com</p>
             <p>Barcelona</p>
@@ -99,5 +93,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
