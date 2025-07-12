@@ -13,7 +13,17 @@ export default function PerfilPage() {
   const userContext = useUser();
   const user = userContext?.user;
   const router = useRouter();
-  const [perfil, setPerfil] = useState<any>(null);
+ type PerfilData = {
+  firstname: string;
+  lastname: string;
+  email: string;
+  telef: string;
+  weight: number;
+  ftp: number;
+};
+
+const [perfil, setPerfil] = useState<PerfilData | null>(null);
+
 
   useEffect(() => {
     const fetchPerfil = async () => {

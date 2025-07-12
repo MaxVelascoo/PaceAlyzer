@@ -23,7 +23,11 @@ export default function RegisterPage() {
     });
     if (signError) return alert('Error al registrar: ' + signError.message);
 
-    const userId = data.user?.id!;
+    if (!data.user || !data.user.id) {
+      return alert('Error: No se pudo obtener el ID del usuario');
+    }
+    const userId = data.user.id;
+
     const { error: insertError } = await supabase.from('users').insert({
       id: userId,
       email: form.email,
