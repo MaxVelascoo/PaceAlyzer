@@ -5,23 +5,19 @@ import { useRouter } from 'next/navigation';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const userContext = useUser();
-  const router    = useRouter();
+  const router = useRouter();
 
-  // Si el contexto es undefined, no hacemos nada (cargando)
-  if (!userContext) return null;
-  const { user } = userContext;
+  // Si aún no se ha cargado el contexto, devolvemos null *después* del hook
+  const user = userContext?.user;
 
- useEffect(() => {
-  if (user === null) {
-    router.replace('/start')
-  }
-}, [user, router])
+  useEffect(() => {
+    if (user === null) {
+      router.replace('/start');
+    }
+  }, [user, router]);
 
-// mientras user === undefined → devuelve null (cargando)
-// si user === null → ya ha disparado replace() arriba
-if (user === undefined || user === null) return null
+  // Esperar a que se cargue el contexto (user === undefined)
+  if (user === undefined || user === null) return null;
 
-return <>{children}</>
-
+  return <>{children}</>;
 }
-

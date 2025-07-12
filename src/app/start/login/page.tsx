@@ -8,12 +8,9 @@ import Link from 'next/link';
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400'] });
 
-// Import your UserContext from its location
-import { UserContext } from '@/context/userContext';
 
 export default function LoginPage() {
   const router = useRouter();
-  const userContext = useContext(UserContext);
   const [form, setForm] = useState({ email: '', password: '' });
   const isReady = form.email.trim() !== '' && form.password.trim() !== '';
 
@@ -21,7 +18,7 @@ export default function LoginPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
 
 const handleLogin = async () => {
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email: form.email,
     password: form.password,
   });
