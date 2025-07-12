@@ -9,7 +9,6 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
 const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-
 function DashboardContent() {
   const [semanaOffset, setSemanaOffset] = useState(0);
   const [diaSeleccionado, setDiaSeleccionado] = useState(0);
@@ -20,6 +19,7 @@ function DashboardContent() {
   const router = useRouter();
 
   const hoy = new Date();
+  const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1; // convertir domingo(0) en 6
   const startOfWeek = new Date(hoy);
   const diff = hoy.getDate() - hoy.getDay() + 1;
   startOfWeek.setDate(diff + semanaOffset * 7);
@@ -29,7 +29,7 @@ function DashboardContent() {
   const diasConFechas = dias.map((dia, i) => {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
-    return { nombre: dia, numero: d.getDate() };
+    return { nombre: dia, numero: d.getDate(), esHoy: semanaOffset === 0 && i === hoyDia };
   });
 
   const esSemanaActual = semanaOffset === 0;
@@ -66,7 +66,7 @@ function DashboardContent() {
           {diasConFechas.map((d, i) => (
             <button
               key={d.nombre}
-              className={`dia ${syne.className} ${i === diaSeleccionado ? 'activo' : ''}`}
+              className={`dia ${syne.className} ${i === diaSeleccionado ? 'activo' : ''} ${d.esHoy ? 'hoy' : ''}`}
               onClick={() => setDiaSeleccionado(i)}
             >
               <div className="dia-num">{d.numero}</div>
@@ -85,9 +85,8 @@ function DashboardContent() {
       </div>
 
       <div className="contenido-dia">
-        <h2 className={syne.className}>
-          {diasConFechas[diaSeleccionado].nombre}, {diasConFechas[diaSeleccionado].numero}
-        </h2>
+        {/* Línea eliminada: ya no mostramos el título con el nombre del día */}
+
         <p className={syne.className}>No hay entrenamiento de este día.</p>
 
         {hasStrava === false && (
@@ -104,6 +103,7 @@ function DashboardContent() {
     </div>
   );
 }
+
 
 export default function Dashboard() {
   return (

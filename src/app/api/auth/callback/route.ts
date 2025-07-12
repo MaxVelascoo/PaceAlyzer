@@ -10,7 +10,7 @@ const supabase = createClient(
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
-  const stateUserId = searchParams.get('state'); // ✅ Obtenemos el user_id desde state
+  const stateUserId = searchParams.get('state'); // ✅ user_id desde state
 
   if (!code || !stateUserId) {
     return NextResponse.json(
@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     );
   }
 
+  // 🔁 Intercambio de código por tokens
   const tokenRes = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
 
   const athlete = tokenData.athlete;
 
-  // 🔁 Insert o update en la tabla strava_accounts
+  // 🔁 Guardar cuenta Strava
   const { error } = await supabase
     .from('strava_accounts')
     .upsert(
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
         expires_at: tokenData.expires_at,
-        user_id: stateUserId, // vinculamos con tu tabla users
+        user_id: stateUserId,
       },
       { onConflict: 'strava_id' }
     );
@@ -60,7 +61,37 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 
-  // Redirige al dashboard ya con cuenta vinculada
+  // 📥 Obtener actividades desde Strava
+  const activitiesRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=50`, {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+    },
+  });
+  const activities = await activitiesRes.json();
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const recentActivities = activities.filter((act: any) => {
+    const actDate = new Date(act.start_date);
+    return actDate >= sevenDaysAgo;
+  });
+
+  for (const act of recentActivities) {
+    await supabase
+      .from('activities')
+      .upsert({
+        strava_activity_id: act.id,
+        user_id: stateUserId,
+        name: act.name,
+        distance: act.distance,
+        moving_time: act.moving_time,
+        start_date: act.start_date,
+        type: act.type,
+        // Si tienes más columnas, añádelas aquí
+      }, { onConflict: 'strava_activity_id' });
+  }
+
   const redirectUrl = new URL('/dashboard', process.env.BASE_URL || 'http://localhost:3000');
   return NextResponse.redirect(redirectUrl);
 }

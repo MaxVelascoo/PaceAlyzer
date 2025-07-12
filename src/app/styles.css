@@ -240,11 +240,21 @@ html {
 }
 
 .dia.activo {
-  background-color: white;
-  color: black;
-  border-color: white;
+  background-color: #ff6b00;
+  color: white;
 }
 
+.dia.hoy {
+  border: 2px solid #ff6b00;
+  background-color: #fff2e6;
+  color: #ff6b00;
+}
+
+.dia.hoy.activo {
+  background-color: #ff6b00;
+  border: 2px solid #ff6b00;
+  color: white;
+}
 
 .contenido-dia {
   text-align: center;
