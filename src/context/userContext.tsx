@@ -1,7 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-
 import type { User } from '@supabase/supabase-js';
 import type { Dispatch, SetStateAction } from 'react';
 
@@ -17,8 +16,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user ?? null);
+      const { data } = await supabase.auth.getSession();
+      setUser(data?.session?.user ?? null);
     };
 
     getSession();

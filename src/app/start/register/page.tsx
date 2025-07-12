@@ -1,10 +1,12 @@
 'use client';
 import React, { useState } from 'react';
-import { Syne } from 'next/font/google';
+import { Syne, Inter } from 'next/font/google';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
+const inter = Inter({ subsets: ['latin'], weight: ['400'] });
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -61,6 +63,7 @@ export default function RegisterPage() {
             type={type || 'text'}
             placeholder={label}
             onChange={handleChange}
+            className={inter.className}
           />
         ))}
         <button 
@@ -72,6 +75,12 @@ export default function RegisterPage() {
           Registrarse
         </button>
       </form>
+      <p className={`${syne.className} login-register-hint`}>
+        ¿Ya tienes cuenta?{' '}
+        <Link href="/start/login" className="register-link">
+          Inicia sesión
+        </Link>
+      </p>
     </div>
   );
 }

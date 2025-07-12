@@ -25,20 +25,32 @@ export default function PerfilPage() {
 const [perfil, setPerfil] = useState<PerfilData | null>(null);
 
 
-  useEffect(() => {
-    const fetchPerfil = async () => {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('users')
-        .select('firstname, lastname, email, telef, ftp, weight')
-        .eq('id', user.id)
-        .single();
+useEffect(() => {
+  const fetchPerfil = async () => {
+    if (!user) return;
 
-      if (!error) setPerfil(data);
-    };
+    console.log('Obteniendo perfil para ID:', user.id);
 
-    fetchPerfil();
-  }, [user]);
+    const { data, error } = await supabase
+      .from('users')
+      .select('firstname, lastname, email, telef, ftp, weight')
+      .eq('id', user.id)
+      .maybeSingle(); // evita error si no hay ninguna fila
+
+    if (error) {
+      console.error('Error al obtener perfil:', error.message);
+    } else if (!data) {
+      console.warn('No se encontró ningún perfil con ese ID');
+    } else {
+      console.log('Datos de perfil obtenidos:', data);
+      setPerfil(data);
+    }
+  };
+
+  fetchPerfil();
+}, [user]);
+
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

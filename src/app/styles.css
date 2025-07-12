@@ -347,7 +347,46 @@ html {
 .choice-button:hover {
   background: #333;
 }
+.login-register-hint {
+  margin-top: 15px;
+  text-align: center;
+  font-size: 0.95rem;
+}
 
+.register-link {
+  color: #ff5a36;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.register-link:hover {
+  text-decoration: underline;
+}
+
+/* start page styles */
+
+.start-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.spaced-button {
+  width: 220px;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 8px;
+  background-color: #ff6b00;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.spaced-button:hover {
+  background-color: #e85e00;
+}
 
 /* Header styles */
 .header {
