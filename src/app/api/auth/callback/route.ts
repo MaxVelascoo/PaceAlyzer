@@ -7,19 +7,28 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+type StravaActivity = {
+  id: number;
+  name: string;
+  start_date: string;
+  distance: number;
+  moving_time: number;
+  average_heartrate: number | null;
+  weighted_average_watts: number | null;
+  average_watts: number | null;
+  total_elevation_gain: number;
+  type: string;
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
-  const stateUserId = searchParams.get('state'); // ✅ user_id desde state
+  const stateUserId = searchParams.get('state');
 
   if (!code || !stateUserId) {
-    return NextResponse.json(
-      { error: 'Missing code or user state' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Missing code or user state' }, { status: 400 });
   }
 
-  // 🔁 Intercambio de código por tokens
   const tokenRes = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -31,6 +40,7 @@ export async function GET(req: Request) {
       redirect_uri: process.env.STRAVA_REDIRECT_URI,
     }),
   });
+
   const tokenData = await tokenRes.json();
 
   if (!tokenRes.ok) {
@@ -40,56 +50,59 @@ export async function GET(req: Request) {
 
   const athlete = tokenData.athlete;
 
-  // 🔁 Guardar cuenta Strava
-  const { error } = await supabase
-    .from('strava_accounts')
-    .upsert(
-      {
-        strava_id: athlete.id,
-        firstname: athlete.firstname,
-        lastname: athlete.lastname,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        expires_at: tokenData.expires_at,
-        user_id: stateUserId,
-      },
-      { onConflict: 'strava_id' }
-    );
+  // Guardar en strava_accounts
+  const { error } = await supabase.from('strava_accounts').upsert(
+    {
+      strava_id: athlete.id,
+      firstname: athlete.firstname,
+      lastname: athlete.lastname,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_at: tokenData.expires_at,
+      user_id: stateUserId,
+    },
+    { onConflict: 'strava_id' }
+  );
 
   if (error) {
     console.error('Supabase error:', error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 
-  // 📥 Obtener actividades desde Strava
-  const activitiesRes = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=50`, {
-    headers: {
-      Authorization: `Bearer ${tokenData.access_token}`,
-    },
-  });
-  const activities = await activitiesRes.json();
+  // Cargar actividades de los últimos 7 días
+  const after = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
+  const activitiesRes = await fetch(
+    `https://www.strava.com/api/v3/athlete/activities?after=${after}`,
+    {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+      },
+    }
+  );
 
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const activitiesData: StravaActivity[] = await activitiesRes.json();
 
-  const recentActivities = activities.filter((act: any) => {
-    const actDate = new Date(act.start_date);
-    return actDate >= sevenDaysAgo;
-  });
+  const trainings = activitiesData.map((a) => ({
+    activity_id: a.id,
+    name: a.name,
+    date: new Date(a.start_date).toISOString().split('T')[0],
+    distance: a.distance,
+    duration: a.moving_time,
+    avgheartrate: a.average_heartrate,
+    avgpower: a.average_watts,
+    weighted_average_watts: a.weighted_average_watts,
+    type: a.type,
+    user_id: stateUserId,
+  }));
 
-  for (const act of recentActivities) {
-    await supabase
-      .from('activities')
-      .upsert({
-        strava_activity_id: act.id,
-        user_id: stateUserId,
-        name: act.name,
-        distance: act.distance,
-        moving_time: act.moving_time,
-        start_date: act.start_date,
-        type: act.type,
-        // Si tienes más columnas, añádelas aquí
-      }, { onConflict: 'strava_activity_id' });
+  if (trainings.length) {
+    const { error: insertError } = await supabase
+      .from('trainings')
+      .upsert(trainings, { onConflict: 'activity_id' });
+
+    if (insertError) {
+      console.error('Error inserting trainings:', insertError);
+    }
   }
 
   const redirectUrl = new URL('/dashboard', process.env.BASE_URL || 'http://localhost:3000');
