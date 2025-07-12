@@ -2,14 +2,19 @@
 import React from 'react';
 import { Syne, Inter } from 'next/font/google';
 import Image from 'next/image';
+import { useUser } from '@/context/userContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400'] });
 
 function ConnectStravaPageContent() {
+  const userContext = useUser(); // Accedemos al usuario actual
+  const user = userContext?.user;
+
   const STRAVA_CLIENT_ID = process.env.NEXT_PUBLIC_STRAVA_CLIENT_ID!;
   const REDIRECT_URI = process.env.NEXT_PUBLIC_STRAVA_REDIRECT_URI!;
+
   const authUrl = [
     `https://www.strava.com/oauth/authorize`,
     `?client_id=${STRAVA_CLIENT_ID}`,
@@ -17,6 +22,7 @@ function ConnectStravaPageContent() {
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}`,
     `&approval_prompt=auto`,
     `&scope=read,activity:read_all`,
+    `&state=${user?.id}` // Aquí se añade el user.id como estado
   ].join('');
 
   return (
