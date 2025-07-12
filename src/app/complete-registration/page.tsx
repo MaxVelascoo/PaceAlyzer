@@ -1,133 +1,37 @@
 'use client';
-export const dynamic = 'force-dynamic';
+import React from 'react';
+import { Syne, Inter } from 'next/font/google';
+import Link from 'next/link';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import PhoneInput from 'react-phone-input-2';
-import { Suspense } from 'react';
-import 'react-phone-input-2/lib/style.css';
+const syne = Syne({ subsets: ['latin'], weight: ['700'] });
+const inter = Inter({ subsets: ['latin'], weight: ['400'] });
 
-function CompleteRegistration() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const stravaId = searchParams.get('strava_id') || '';
-
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [ftp, setFtp] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email || !phone) {
-      setError('Por favor, rellena email y teléfono.');
-      return;
-    }
-
-    setError('');
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/complete-registration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          strava_id: stravaId,
-          email,
-          phone,
-          weight: weight ? Number(weight) : null,
-          height: height ? Number(height) : null,
-          ftp: ftp ? Number(ftp) : null,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Error enviando datos.');
-      } else {
-        router.push('/welcome');
-      }
-    } catch {
-      setError('Error de red o servidor.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
+export default function DashboardPage() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-8 bg-white text-gray-900">
-      <h1 className="text-3xl font-bold mb-6">Últimos pasos para registrarte</h1>
-      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded"
-          required
-        />
-        <div className="w-full">
-          <PhoneInput
-            country={'es'}
-            value={phone}
-            onChange={(value) => setPhone(value)}
-            inputClass="!w-full !p-3 !rounded !border !border-gray-300"
-            buttonClass="!border-gray-300"
-            containerClass="!w-full"
-            inputProps={{ name: 'phone', required: true }}
-          />
+    <main
+      className="min-h-screen bg-cover bg-center bg-no-repeat text-white px-6 py-20"
+      style={{ backgroundImage: "url('/background.png')" }}
+    >
+      <div className="max-w-3xl mx-auto text-left">
+        <h1 className={`text-4xl mb-6 ${syne.className}`}>
+          ¡Bienvenido a PaceAlyzer!
+        </h1>
+        <p className={`text-lg mb-8 leading-relaxed ${inter.className}`}>
+          Has conectado exitosamente tu cuenta de Strava. A partir de ahora, PaceAlyzer podrá analizar tus entrenamientos, generar informes personalizados y ayudarte a alcanzar tus objetivos ciclistas con inteligencia adaptativa.
+        </p>
+
+        <div className="space-y-4">
+          <p className={inter.className}>✅ Analiza tu progreso en tiempo real</p>
+          <p className={inter.className}>✅ Recibe recomendaciones de entrenamiento</p>
+          <p className={inter.className}>✅ Explora tus mejores rendimientos</p>
         </div>
-        <input
-          type="number"
-          placeholder="Peso (kg)"
-          value={weight}
-          onChange={e => setWeight(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded"
-          min="30"
-          max="200"
-          step="0.1"
-        />
-        <input
-          type="number"
-          placeholder="Altura (cm)"
-          value={height}
-          onChange={e => setHeight(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded"
-          min="100"
-          max="250"
-          step="0.1"
-        />
-        <input
-          type="number"
-          placeholder="FTP (watts)"
-          value={ftp}
-          onChange={e => setFtp(e.target.value)}
-          className="w-full p-3 border border-gray-300 rounded"
-          min="50"
-          max="1000"
-          step="1"
-        />
-        {error && <p className="text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-black text-white py-3 rounded hover:bg-gray-800 transition disabled:opacity-50"
-        >
-          {loading ? 'Guardando...' : 'Finalizar registro'}
-        </button>
-      </form>
-    </main>
-  );
-}
 
-// Este es el que Next.js exporta como página
-export default function CompleteRegistrationPage() {
-  return (
-    <Suspense fallback={<div>Cargando...</div>}>
-      <CompleteRegistration />
-    </Suspense>
+        <Link href="/profile">
+          <button className="mt-10 px-6 py-3 bg-white text-black rounded-full font-medium text-lg hover:bg-gray-200 transition">
+            Ver mi perfil
+          </button>
+        </Link>
+      </div>
+    </main>
   );
 }

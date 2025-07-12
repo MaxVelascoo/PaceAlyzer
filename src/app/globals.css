@@ -10,11 +10,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+html {
+  margin: 0; /* ✅ Elimina el margen por defecto del navegador */
+  padding: 0;
+}
+
+
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  margin: 0;
+  background-color: #000000;
+  color: #ffffff;
   font-family: var(--font-sans), sans-serif;
 }
+
 
 /* Animación pulse para los círculos degradados */
 @keyframes pulse {

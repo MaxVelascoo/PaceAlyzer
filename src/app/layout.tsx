@@ -25,12 +25,27 @@ export default function RootLayout({
         {/* Header */}
         <header className="header">
           <div className="header-content">
-            <Link href="/" className={`logo ${syne.className}`}>PaceAlyzer</Link>
+            <div className="header-left">
+              <Link href="/" className={`logo ${syne.className}`}>PaceAlyzer</Link>
+            </div>
 
-            <nav className="nav">
-              <Link href="/" className={`nav-link ${syne.className}`}>Inicio</Link>
-            </nav>
+            <div className="header-center">
+              <Link href="/">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="header-logo"
+                />
+              </Link>
+            </div>
+            
+            <div className="header-right">
+              <nav className="nav">
+                <Link href="/" className={`nav-link ${syne.className}`}>Inicio</Link>
+              </nav>
+            </div>
           </div>
+
         </header>
 
         {/* Main */}
@@ -70,6 +85,5 @@ export default function RootLayout({
     </html>
   );
 }
-
 
 

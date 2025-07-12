@@ -1,5 +1,5 @@
 .hero {
-  height: 100vh;
+  height: 90vh;
   background-image: url('/background.png');
   background-size: cover;
   background-position: center;
@@ -11,6 +11,10 @@
 .overlay {
   max-width: 800px;
   color: white;
+}
+
+body {
+  margin: 0;
 }
 
 .title {
@@ -26,19 +30,21 @@
 }
 
 .start-button {
-  background: white;
-  color: black;
+  background: black;            /* Fondo negro */
+  color: white;                 /* Texto blanco */
   font-size: 1.25rem;
   padding: 15px 30px;
   border: none;
   border-radius: 9999px;
   cursor: pointer;
   transition: background 0.3s;
+  font-family: 'Syne', sans-serif; /* Tipografía Syne */
 }
 
 .start-button:hover {
-  background: #e0e0e0;
+  background: #333333; /* Color más claro al pasar el ratón */
 }
+
 
 .form-container {
   min-height: 100vh;
@@ -54,6 +60,7 @@
   margin-bottom: 30px;
   color: #222;
 }
+
 
 .form {
   display: flex;
@@ -81,12 +88,70 @@
   cursor: not-allowed;
 }
 
+.product-section {
+  height: 80vh;
+  background-color: #1c1c1c;
+  color: white;
+  padding: 100px 0px;
+  display: flex;
+  justify-content: flex-start; /* ─ contenido desde la izquierda */
+  align-items: flex-start;
+  text-align: left;
+}
+
+
+.product-content {
+  max-width: 800px;
+  padding-left: 100px; /* ✅ Añadido para separar del borde izquierdo */
+}
+
+
+.product-content h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.product-content p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+
+
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.fade-in-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+
 /* Header styles */
 .header {
   background-color: black;
   color: white;
   padding: 20px 40px;
+  position: sticky; /* ✅ Fija el header */
+  top: 0;            /* ✅ Lo fija en la parte superior */
+  z-index: 50;       /* ✅ Se asegura de que esté encima del contenido */
 }
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.header-logo {
+  width: 64px;
+  height: auto;
+}
+
 
 .header-content {
   display: flex;
@@ -103,7 +168,7 @@
 }
 
 .logo:hover {
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 
