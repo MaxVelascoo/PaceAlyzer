@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Syne, Inter } from 'next/font/google';
 import './styles.css';
+import WorkflowVisual from './workflowVisual';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400'] });
@@ -54,47 +55,29 @@ const HomePage: React.FC = () => {
           >
             Empezar
           </button>
-
         </div>
       </div>
 
       {/* Sección inferior */}
       <div
-        id="acerca-del-producto"
-        ref={productRef}
-        className="product-section"
-      >
-        <div className={`product-content fade-in-section ${productVisible ? 'visible' : ''}`}>
-          <h2 className={syne.className}>¿Qué es PaceAlyzer?</h2>
-          <p className={inter.className}>
-            PaceAlyzer es una plataforma que transforma tus datos de ciclismo en recomendaciones inteligentes de entrenamiento. Conéctate a Strava y recibe análisis detallados, seguimiento de progresos y sugerencias personalizadas para maximizar tu rendimiento.
-          </p>
+          id="acerca-del-producto"
+          ref={productRef}
+          className="product-section"
+        >
+          <div className={`product-content fade-in-section ${productVisible ? 'visible' : ''}`}>
+            <div className="product-text">
+              <h2 className={syne.className}>Acerca del producto</h2>
+              <p className={inter.className}>
+                PaceAlyzer es una plataforma que transforma tus datos de ciclismo en recomendaciones inteligentes de entrenamiento. Conéctate a Strava y recibe análisis detallados, seguimiento de progresos y sugerencias personalizadas para maximizar tu rendimiento.
+              </p>
+            </div>
 
-                    {/* Diagrama de workflow visual */}
-          <div className="workflow">
-            <div className="node">
-              <img src="/strava-icon.png" alt="Strava" />
-              <span>Actividad subida (Strava)</span>
-            </div>
-            <div className="arrow">→</div>
-            <div className="node">
-              <img src="/ai-icon.png" alt="IA" />
-              <span>Análisis inteligente</span>
-            </div>
-            <div className="arrow">→</div>
-            <div className="node">
-              <img src="/whatsapp-icon.png" alt="WhatsApp" />
-              <span>Notificación WhatsApp</span>
-            </div>
-            <div className="arrow">or</div>
-            <div className="node">
-              <img src="/email-icon.png" alt="Email" />
-              <span>Email personalizado</span>
-            </div>
+            {/* Diagrama de workflow visual */}
+            <WorkflowVisual />
           </div>
-
         </div>
-      </div>
+
+
     </>
   );
 };

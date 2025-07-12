@@ -94,33 +94,37 @@ html {
 }
 
 .product-section {
-  height: 80vh;
   background-color: #1c1c1c;
   color: white;
-  padding: 100px 0px;
+  padding: 100px 0;
   display: flex;
-  justify-content: flex-start; /* ─ contenido desde la izquierda */
-  align-items: flex-start;
+  justify-content: left;
+  align-items: left;
   text-align: left;
 }
 
-
 .product-content {
   max-width: 800px;
-  padding-left: 100px; /* ✅ Añadido para separar del borde izquierdo */
+  width: 100%;
+  padding-left: 100px; /* Igual que .hero */
+  text-align: left;
 }
 
 
 .product-content h2 {
   font-size: 3.5rem;
   margin-bottom: 60px;
-  text-align: left;
 }
 
 .product-content p {
   font-size: 1.2rem;
   line-height: 1.6;
 }
+.product-text {
+  text-align: left;
+  margin-bottom: 60px;
+}
+
 
 .workflow {
   display: flex;
@@ -253,6 +257,62 @@ html {
   font-size: 1.3rem;
   color: #a0a0a0;
 }
+
+/* workflow styles */
+.workflow-visual {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* ✅ Centra horizontalmente */
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+
+.workflow-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.8rem;
+  margin-bottom: 40px;
+  color: white;
+}
+
+.workflow-nodes {
+  display: flex;
+  justify-content: center; /* ✅ Centrado horizontal */
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 30px;
+  width: 100%;
+  max-width: 800px; /* opcional, para que no se extienda demasiado */
+}
+
+
+.workflow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 140px;
+}
+
+.workflow-icon {
+  width: 48px;
+  height: 48px;
+  color: white;
+}
+
+.workflow-node span {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.95rem;
+  color: white;
+}
+
+.workflow-arrow {
+  font-size: 2rem;
+  color: white;
+}
+
 
 
 /* Header styles */
