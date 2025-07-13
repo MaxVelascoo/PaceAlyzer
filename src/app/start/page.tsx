@@ -2,10 +2,11 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Syne } from 'next/font/google';
+import PublicRoute from '@/components/publicRoute'; // asegúrate de que la ruta es correcta
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
-export default function StartPage() {
+function StartPageContent() {
   const router = useRouter();
 
   return (
@@ -20,5 +21,13 @@ export default function StartPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function StartPage() {
+  return (
+    <PublicRoute>
+      <StartPageContent />
+    </PublicRoute>
   );
 }

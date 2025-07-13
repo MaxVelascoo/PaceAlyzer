@@ -174,10 +174,11 @@ html {
 
 /* Dashboard styles */
 .dashboard {
-  padding: 40px;
-  background-color: #1c1c1c;
-  color: white;
+  padding: 20px;
+  /*background: linear-gradient(135deg, #7b2ff7, #f107a3, #ff6a00);*/
+  background-color: #f0f0f0;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .dashboard-link {
@@ -185,6 +186,85 @@ html {
   margin-right: 15px;
 }
 
+.entreno-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  justify-content: center;
+  margin-top: 40px;
+  padding: 0 20px;
+}
+
+
+.card {
+  break-inside: avoid;
+  width: 100%;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
+  display: inline-block; /* ✅ importante para que Masonry calcule bien la altura */
+}
+
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+
+.training-summary p,
+.lap-bars .lap-bar,
+.training-analysis {
+  font-size: 15px;
+  margin: 6px 0;
+}
+
+.training-summary ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.laps-bar-chart .lap-bar {
+  background: #ffe0f0;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.analysis-section {
+  line-height: 1.6;
+  font-size: 15px;
+  margin: 0 auto;
+}
+
+
+img.no-training {
+  max-width: 220px;
+  margin: 20px auto;
+  opacity: 0.7;
+}
+
+
+training-analysis .analysis-content {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .entreno-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 95%;
+  }
+}
 
 .week-control {
   display: flex;
@@ -552,3 +632,208 @@ html {
 .nav-link:visited {
   color: white;
 }
+
+/* Privacy Policy and Terms of Service styles */
+.privacy-container {
+  padding: 2rem 1rem;
+  display: flex;
+  justify-content: center;
+  background-color: #fdfdfd;
+}
+
+.privacy-content {
+  max-width: 720px;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.privacy-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.privacy-subtitle {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-paragraph {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.privacy-list {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.privacy-footer {
+  font-size: 0.875rem;
+  color: #888;
+  margin-top: 2rem;
+}
+
+/* WeekHeader styles */
+/* Header semana con degradado radiante */
+.week-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, #8b1fa9, #e91e63, #ff6b00);
+  border-radius: 40px;
+  margin: 20px auto; /* algo de espacio superior-inferior */
+  max-width: 900px;
+}
+
+.nav-button {
+  background: rgba(255,255,255,0.3);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.nav-button:hover:not(:disabled) {
+  background: rgba(255,255,255,0.5);
+}
+
+.nav-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.days-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 0 10px;
+  scroll-behavior: smooth;
+}
+
+.days-scroll::-webkit-scrollbar {
+  display: none; /* oculta la barra de scroll para más estética */
+}
+
+
+.day-pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  font-size: 1rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+}
+
+.day-pill.active {
+  background: rgba(255,255,255,0.9);
+  color: #ff6b00;
+  font-weight: 700;
+}
+
+/* AnalysisBox styles */
+.masonry {
+  column-count: 3;
+  column-gap: 1rem;
+}
+
+
+
+.training-analysis.card {
+  padding: 24px;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  line-height: 1.6;
+  color: #333;
+}
+
+/* TrainigSummaryCard styles */
+
+.card-title {
+  font-size: 20px;
+  margin-bottom: 16px;
+  color: #111;
+}
+
+.summary-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.summary-list li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.label {
+  font-weight: 600;
+  color: #444;
+}
+
+.masonry-grid {
+  display: block; /* permite que Masonry use su JS para columnas */
+  width: 100%;
+  max-width: 1200px; /* o el ancho deseado */
+  padding: 20px;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.masonry-grid_column {
+  background-clip: padding-box;
+}
+.masonry-grid_column > .card {
+  margin-bottom: 1rem;
+}
+
+
+.manual-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.manual-grid_column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.training-row {
+  display: flex;
+  gap: 50px; /* 👈 esto es el espacio entre columnas */
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto 40px auto;
+  box-sizing: border-box;
+  align-items: flex-start; /* 👈 asegura que se alineen arriba */
+}
+
+.column-left,
+.column-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+

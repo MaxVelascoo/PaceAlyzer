@@ -1,24 +1,35 @@
 'use client';
 import Link from 'next/link';
-import { useUser } from '@/context/userContext';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Syne } from 'next/font/google';
+import { useUser } from '@/context/userContext';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
 export default function Header() {
-  const userContext = useUser();
-  const user = userContext?.user;
+  const pathname = usePathname();
+  const isHome = pathname === '/';
+  const { user } = useUser() || {};
 
   return (
     <header className="header">
       <div className="header-content">
         <div className="header-left">
-          <Link href="/" className={`logo ${syne.className}`}>PaceAlyzer</Link>
+          <Link href="/" className={`logo ${syne.className}`}>
+            PaceAlyzer
+          </Link>
         </div>
 
         <div className="header-center">
           <Link href="/">
-            <img src="/logo.png" alt="Logo" className="header-logo" />
+            <Image
+              src={isHome ? '/logo.png' : '/logo-color.png'}
+              alt="PaceAlyzer logo"
+              className="header-logo"
+              width={64}
+              height={64}
+            />
           </Link>
         </div>
 
@@ -43,8 +54,10 @@ export default function Header() {
                 </Link>
               </>
             )}
-            <Link href="/" className={`nav-link ${syne.className}`}>Inicio</Link>
-            <Link href="#acerca-del-producto" className={`nav-link ${syne.className}`}>
+            <Link href="/" className={`nav-link ${syne.className}`}>
+              Inicio
+            </Link>
+            <Link href="/#acerca-del-producto" className={`nav-link ${syne.className}`}>
               Acerca del producto
             </Link>
           </nav>
