@@ -1,9 +1,14 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { Syne } from 'next/font/google';
+
 
 type Props = {
   html: string;
 };
+
+const syne = Syne({ subsets: ['latin'], weight: ['700'] });
+
 
 export default function AnalysisBox({ html }: Props) {
   const [sections, setSections] = useState<{ title: string; content: string }[]>([]);
@@ -43,7 +48,7 @@ export default function AnalysisBox({ html }: Props) {
   <>
     {sections.map(({ title, content }, idx) => (
       <div className="card training-analysis" key={idx}>
-        <h4>{title}</h4>
+        <h4 className={`card-title ${syne.className}`}>{title}</h4>
         <div className="analysis-content" dangerouslySetInnerHTML={{ __html: content }} />
       </div>
     ))}

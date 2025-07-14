@@ -3,7 +3,18 @@ import { Syne } from 'next/font/google';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
-export default function TrainingSummaryCard({ training }: { training: any }) {
+type Training = {
+  activity_id: number;
+  name: string;
+  date: string;
+  distance: number;
+  duration: number;
+  avgheartrate: number | null;
+  avgpower: number | null;
+  weighted_average_watts: number | null;
+};
+
+export default function TrainingSummaryCard({ training }: { training: Training }) {
   return (
     <div className="card training-summary">
       <h3 className={`card-title ${syne.className}`}>{training.name}</h3>
