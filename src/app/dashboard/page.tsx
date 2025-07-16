@@ -75,9 +75,9 @@ function DashboardContent() {
                   <img
                     src="/no-training.png"
                     alt="No training"
-                    style={{ maxWidth: '220px', opacity: 0.7, marginBottom: '20px' }}
+                    style={{ maxWidth: '320px', opacity: 0.7, marginBottom: '20px' }}
                   />
-                  <p className={syne.className}>No hay entrenamiento en este día.</p>
+                  <p className={syne.className}>No hay ningun entreno registrado este día</p>
                 </div>
               );
             }

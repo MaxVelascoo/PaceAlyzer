@@ -9,43 +9,78 @@ import styles from './profile.module.css';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
-export default function PerfilPage() {
-  const userContext = useUser();
-  const user = userContext?.user;
-  const router = useRouter();
- type PerfilData = {
+type PerfilData = {
   firstname: string;
   lastname: string;
   email: string;
   telef: string;
   weight: number;
   ftp: number;
+  avatar_url: string | null;
 };
 
-const [perfil, setPerfil] = useState<PerfilData | null>(null);
+export default function PerfilPage() {
+  const user = useUser()?.user;
+  const router = useRouter();
+  const [perfil, setPerfil] = useState<PerfilData | null>(null);
+  const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    const fetchPerfil = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('users')
+        .select('firstname, lastname, email, telef, ftp, weight, avatar_url')
+        .eq('id', user.id)
+        .single();
+      if (data && !error) setPerfil(data);
+    };
+    fetchPerfil();
+  }, [user]);
 
-useEffect(() => {
-  const fetchPerfil = async () => {
-    if (!user) return;
-    console.log('Obteniendo perfil para ID:', user.id);
-    const { data, error } = await supabase
-      .from('users')
-      .select('firstname, lastname, email, telef, ftp, weight')
-      .eq('id', user.id)
-      .single();
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0] || !user) return;
+    setUploading(true);
 
-    if (!error && data) {
-      setPerfil(data);
-    } else {
-      console.log('No se encontró ningún perfil con ese ID');
+    try {
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // ✅ Subir imagen
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // ✅ Obtener URL pública
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      if (!publicUrlData?.publicUrl) throw new Error('No public URL found');
+
+      // ✅ Guardar URL en el perfil
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrlData.publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // ✅ Actualizar estado en React
+      setPerfil(prev =>
+        prev ? { ...prev, avatar_url: publicUrlData.publicUrl } : prev
+      );
+    } catch (err) {
+      console.error('Upload failed:', err);
+      alert('Error al subir la imagen');
+    } finally {
+      setUploading(false);
     }
   };
-
-  fetchPerfil();
-}, [user]);
-
-
 
 
   const handleLogout = async () => {
@@ -59,18 +94,31 @@ useEffect(() => {
         <h2 className={styles.heading}>Tu Perfil</h2>
         {perfil ? (
           <>
-            <p className={styles.field}>Nombre: {perfil.firstname}</p>
-            <p className={styles.field}>Apellidos: {perfil.lastname}</p>
-            <p className={styles.field}>Email: {perfil.email}</p>
-            <p className={styles.field}>Teléfono: {perfil.telef}</p>
-            <p className={styles.field}>Peso: {perfil.weight} kg</p>
-            <p className={styles.field}>FTP: {perfil.ftp} W</p>
+            <div className={styles.avatarContainer}>
+              {perfil.avatar_url ? (
+                <img src={perfil.avatar_url} alt="Avatar" className={styles.avatar} />
+              ) : (
+                <div className={styles.avatarPlaceholder}>Sube tu foto</div>
+              )}
+              <label className={styles.uploadLabel}>
+                {uploading ? 'Cargando...' : 'Cambiar foto'}
+                <input type="file" accept="image/*" onChange={uploadAvatar} hidden />
+              </label>
+            </div>
+            <div className={styles.fields}>
+              <p><strong>Nombre:</strong> {perfil.firstname}</p>
+              <p><strong>Apellidos:</strong> {perfil.lastname}</p>
+              <p><strong>Email:</strong> {perfil.email}</p>
+              <p><strong>Teléfono:</strong> {perfil.telef}</p>
+              <p><strong>Peso:</strong> {perfil.weight} kg</p>
+              <p><strong>FTP:</strong> {perfil.ftp} W</p>
+            </div>
             <button onClick={handleLogout} className={styles.logout}>
               Cerrar sesión
             </button>
           </>
         ) : (
-          <p className={styles.field}>Cargando datos del perfil...</p>
+          <p>Cargando datos del perfil...</p>
         )}
       </div>
     </ProtectedRoute>

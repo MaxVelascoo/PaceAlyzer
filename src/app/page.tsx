@@ -68,6 +68,7 @@ const HomePage: React.FC = () => {
           ref={heroRef}
           className={`overlay fade-in-section ${heroVisible ? 'visible' : ''}`}
         >
+          {/*<h1 className={`title ${syne.className}`}>¡Analiza, Optimiza y <br /> supera tus límites!</h1>*/}
           <h1 className={`title ${syne.className}`}>¡Analiza, Optimiza y <br /> supera tus límites!</h1>
           <p className={`subtitle ${inter.className}`}>
             Bienvenido a PaceAlyzer, tu entrenador virtual inteligente para ciclistas. <br />
