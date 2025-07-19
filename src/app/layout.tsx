@@ -2,7 +2,7 @@ import './styles.css';
 import Link from 'next/link';
 import { Syne } from 'next/font/google';
 import { UserProvider } from '@/context/userContext';
-import Header from '@/components/header'; // nuevo
+import Header from '@/components/header';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
@@ -30,16 +30,14 @@ export default function RootLayout({
         <footer className="footer">
           <div className="footer-left">
             <h2 className={syne.className}>PaceAlyzer</h2>
-            <p>651-677-748</p>
+            <p>123-456-789</p>
             <p>max.velaso.rajo@gmail.com</p>
             <p>Barcelona</p>
           </div>
           <div className="footer-right">
             <ul>
               <li><Link href="/privacy">Política de Privacidad</Link></li>
-              <li><Link href="#">Declaración de Accesibilidad</Link></li>
               <li><Link href="/terms">Términos y Condiciones</Link></li>
-              <li><Link href="#">Política de Reembolso</Link></li>
             </ul>
           </div>
           <div className="footer-bottom">

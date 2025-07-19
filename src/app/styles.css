@@ -98,16 +98,16 @@ html {
   color: white;
   padding: 100px 0;
   display: flex;
-  justify-content: left;
-  align-items: left;
-  text-align: left;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .product-content {
   max-width: 800px;
   width: 100%;
   padding-left: 100px; /* Igual que .hero */
-  text-align: left;
+  text-align: center;
 }
 
 
@@ -121,7 +121,7 @@ html {
   line-height: 1.6;
 }
 .product-text {
-  text-align: left;
+  text-align: center;
   margin-bottom: 60px;
 }
 

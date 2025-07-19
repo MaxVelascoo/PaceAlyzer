@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Syne } from 'next/font/google';
 import { useUser } from '@/context/userContext';
 import { useRouter } from 'next/navigation';
@@ -14,8 +14,15 @@ const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 function DashboardContent() {
+  const hoy = new Date();
+  const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+
   const [semanaOffset, setSemanaOffset] = useState(0);
-  const [diaSeleccionado, setDiaSeleccionado] = useState(0);
+  const [diaSeleccionado, setDiaSeleccionado] = useState(hoyDia);
+
+  useEffect(() => {
+    setDiaSeleccionado(semanaOffset === 0 ? hoyDia : 0);
+  }, [semanaOffset, hoyDia]);
 
   const user = useUser()?.user;
   const router = useRouter();
@@ -29,20 +36,24 @@ function DashboardContent() {
     startOfWeek,
   } = useDashboardData(user?.id, semanaOffset);
 
-  const hoy = new Date();
-  const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
-
   const mes = startOfWeek.toLocaleString('es-ES', { month: 'long' });
   const diasConFechas = dias.map((dia, i) => {
     const d = new Date(startOfWeek);
     d.setDate(startOfWeek.getDate() + i);
     const key = d.toISOString().split('T')[0];
-    return { nombre: dia, numero: d.getDate(), esHoy: semanaOffset === 0 && i === hoyDia, key };
+    return {
+      nombre: dia,
+      numero: d.getDate(),
+      esHoy: semanaOffset === 0 && i === hoyDia,
+      key,
+    };
   });
 
   return (
     <div className="dashboard">
-      <div className={`mes ${syne.className}`}>{mes.charAt(0).toUpperCase() + mes.slice(1)}</div>
+      <div className={`mes ${syne.className}`}>
+        {mes.charAt(0).toUpperCase() + mes.slice(1)}
+      </div>
 
       <WeekHeader
         diasConFechas={diasConFechas}
@@ -61,7 +72,10 @@ function DashboardContent() {
             <p className={syne.className}>
               Para ver tus entrenamientos, necesitas conectar tu cuenta de Strava.
             </p>
-            <button className="form-button" onClick={() => router.push('/connect-strava')}>
+            <button
+              className="form-button"
+              onClick={() => router.push('/connect-strava')}
+            >
               Conectar con Strava
             </button>
           </div>
@@ -69,6 +83,7 @@ function DashboardContent() {
           (() => {
             const key = diasConFechas[diaSeleccionado].key;
             const entrenos = trainingsByDate[key] || [];
+
             if (!entrenos.length) {
               return (
                 <div style={{ textAlign: 'center', marginTop: '40px' }}>
@@ -77,26 +92,36 @@ function DashboardContent() {
                     alt="No training"
                     style={{ maxWidth: '320px', opacity: 0.7, marginBottom: '20px' }}
                   />
-                  <p className={syne.className}>No hay ningun entreno registrado este día</p>
+                  <p className={syne.className}>
+                    No hay ningún entreno registrado este día
+                  </p>
                 </div>
               );
             }
 
-            return entrenos.map(t => (
-              <div className="training-row" key={t.activity_id}>
-                <div className="column-left">
-                  <TrainingSummaryCard training={t} />
-                  {lapsByActivity[t.activity_id] && (
-                    <LapsBarChart laps={lapsByActivity[t.activity_id]} />
-                  )}
+            return entrenos.map(t => {
+              const analysis = analysisByActivity[t.activity_id];
+
+              return (
+                <div className="training-row" key={t.activity_id}>
+                  <div className="column-left">
+                    <TrainingSummaryCard training={t} />
+                    {lapsByActivity[t.activity_id] && (
+                      <LapsBarChart laps={lapsByActivity[t.activity_id]} />
+                    )}
+                  </div>
+                  <div className="column-right">
+                    {analysis && (
+                      <AnalysisBox
+                        analysis={analysis.analysis}
+                        nutrition={analysis.nutrition}
+                        recuperation={analysis.recuperation}
+                      />
+                    )}
+                  </div>
                 </div>
-                <div className="column-right">
-                  {analysisByActivity[t.activity_id] && (
-                    <AnalysisBox html={analysisByActivity[t.activity_id]} />
-                  )}
-                </div>
-              </div>
-            ));
+              );
+            });
           })()
         )}
       </div>

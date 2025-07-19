@@ -1,4 +1,3 @@
-// hooks/useDashboardData.ts
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Training, Lap } from '@/types/training';
@@ -8,7 +7,9 @@ export function useDashboardData(userId: string | undefined, semanaOffset: numbe
   const [loading, setLoading] = useState(true);
   const [trainingsByDate, setTrainingsByDate] = useState<Record<string, Training[]>>({});
   const [lapsByActivity, setLapsByActivity] = useState<Record<number, Lap[]>>({});
-  const [analysisByActivity, setAnalysisByActivity] = useState<Record<number, string>>({});
+  const [analysisByActivity, setAnalysisByActivity] = useState<
+  Record<number, { analysis?: string; nutrition?: string; recuperation?: string }>
+>({});
 
   const hoy = new Date();
   const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
@@ -21,57 +22,90 @@ export function useDashboardData(userId: string | undefined, semanaOffset: numbe
     if (!userId) return;
 
     const fetchData = async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
+        console.log('📆 Semana desde:', startOfWeek.toISOString(), 'hasta:', endOfWeek.toISOString());
 
-      // 1. Strava conectado
-      const { data: stravaAccount } = await supabase
-        .from('strava_accounts')
-        .select('strava_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-      setHasStrava(!!stravaAccount?.strava_id);
+        // 1. Verifica si el usuario tiene Strava conectado
+        const { data: stravaAccount, error: stravaError } = await supabase
+          .from('strava_accounts')
+          .select('strava_id')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      // 2. Trainings
-      const { data: trainings } = await supabase
-        .from('trainings')
-        .select('activity_id, name, date, distance, duration, avgheartrate, avgpower, weighted_average_watts')
-        .eq('user_id', userId)
-        .gte('date', startOfWeek.toISOString().split('T')[0])
-        .lte('date', endOfWeek.toISOString().split('T')[0]);
+        if (stravaError) {
+          console.error('❌ Error obteniendo cuenta Strava:', stravaError.message);
+        }
+        setHasStrava(!!stravaAccount?.strava_id);
 
-      const grouped: Record<string, Training[]> = {};
-      trainings?.forEach(t => {
-        grouped[t.date] = grouped[t.date] || [];
-        grouped[t.date].push(t);
-      });
-      setTrainingsByDate(grouped);
+        // 2. Obtiene entrenamientos de esa semana
+        const { data: trainings, error: trainingsError } = await supabase
+          .from('trainings')
+          .select('activity_id, name, date, distance, duration, avgheartrate, avgpower, weighted_avg_watts')
+          .eq('user_id', userId)
+          .gte('date', startOfWeek.toISOString().split('T')[0])
+          .lte('date', endOfWeek.toISOString().split('T')[0]);
 
-      const ids = trainings?.map(t => t.activity_id) || [];
+        if (trainingsError) {
+          console.error('❌ Error obteniendo trainings:', trainingsError.message);
+        } else {
+          console.log('✅ Entrenamientos:', trainings);
+        }
 
-      // 3. Laps
-      const { data: laps } = await supabase
-        .from('laps')
-        .select('activity_id, lap_index, duration_seconds, average_watts, average_heartrate')
-        .in('activity_id', ids);
-      const lapsMap: Record<number, Lap[]> = {};
-      laps?.forEach(l => {
-        lapsMap[l.activity_id] = lapsMap[l.activity_id] || [];
-        lapsMap[l.activity_id].push(l);
-      });
-      setLapsByActivity(lapsMap);
+        const grouped: Record<string, Training[]> = {};
+        trainings?.forEach(t => {
+          grouped[t.date] = grouped[t.date] || [];
+          grouped[t.date].push(t);
+        });
+        setTrainingsByDate(grouped);
 
-      // 4. Analyses
-      const { data: analyses } = await supabase
-        .from('training_analyses')
-        .select('training_id, html_analysis')
-        .in('training_id', ids);
-      const analysisMap: Record<number, string> = {};
-      analyses?.forEach(a => {
-        analysisMap[a.training_id] = a.html_analysis;
-      });
-      setAnalysisByActivity(analysisMap);
+        const ids = trainings?.map(t => t.activity_id) || [];
 
-      setLoading(false);
+        // 3. Obtiene las vueltas (laps)
+        const { data: laps, error: lapsError } = await supabase
+          .from('laps')
+          .select('activity_id, lap_index, duration_seconds, average_watts, average_heartrate')
+          .in('activity_id', ids);
+
+        if (lapsError) {
+          console.error('❌ Error obteniendo laps:', lapsError.message);
+        } else {
+          console.log('✅ Laps:', laps);
+        }
+
+        const lapsMap: Record<number, Lap[]> = {};
+        laps?.forEach(l => {
+          lapsMap[l.activity_id] = lapsMap[l.activity_id] || [];
+          lapsMap[l.activity_id].push(l);
+        });
+        setLapsByActivity(lapsMap);
+
+        // 4. Obtiene análisis (html)
+        const { data: analyses, error: analysisError } = await supabase
+          .from('training_analyses')
+          .select('training_id, analysis, nutrition, recuperation')
+          .in('training_id', ids);
+
+        if (analysisError) {
+          console.error('❌ Error obteniendo analyses:', analysisError.message);
+        }
+
+        const analysisMap: Record<number, { analysis: string; nutrition: string; recuperation: string }> = {};
+        analyses?.forEach(a => {
+          analysisMap[a.training_id] = {
+            analysis: a.analysis,
+            nutrition: a.nutrition,
+            recuperation: a.recuperation,
+          };
+        });
+        setAnalysisByActivity(analysisMap);
+
+
+      } catch (err) {
+        console.error('🔥 Error inesperado en fetchData:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();

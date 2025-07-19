@@ -11,7 +11,7 @@ type Training = {
   duration: number;
   avgheartrate: number | null;
   avgpower: number | null;
-  weighted_average_watts: number | null;
+  weighted_avg_watts: number | null;
 };
 
 export default function TrainingSummaryCard({ training }: { training: Training }) {
@@ -25,7 +25,10 @@ export default function TrainingSummaryCard({ training }: { training: Training }
         </li>
         <li>
           <span className="label">Duración:</span>
-          <span>{Math.floor(training.duration / 60)}h {Math.round(training.duration % 60)}min</span>
+          <span>
+            {Math.floor(training.duration / 3600)}h {Math.floor((training.duration % 3600) / 60)}min
+          </span>
+
         </li>
         {training.avgheartrate && (
           <li>
@@ -39,10 +42,10 @@ export default function TrainingSummaryCard({ training }: { training: Training }
             <span>{training.avgpower} W</span>
           </li>
         )}
-        {training.weighted_average_watts && (
+        {training.weighted_avg_watts && (
           <li>
             <span className="label">Potencia normalizada:</span>
-            <span>{Math.round(training.weighted_average_watts)} W</span>
+            <span>{Math.round(training.weighted_avg_watts)} W</span>
           </li>
         )}
       </ul>

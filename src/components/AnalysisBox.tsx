@@ -1,58 +1,35 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Syne } from 'next/font/google';
 
-
 type Props = {
-  html: string;
+  analysis?: string;
+  nutrition?: string;
+  recuperation?: string;
 };
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
-
-export default function AnalysisBox({ html }: Props) {
-  const [sections, setSections] = useState<{ title: string; content: string }[]>([]);
-
-  useEffect(() => {
-    if (!html) return;
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const content = doc.body;
-
-    const headings = Array.from(content.querySelectorAll('h3, h4'));
-    const newSections: { title: string; content: string }[] = [];
-
-    for (let i = 0; i < headings.length; i++) {
-      const title = headings[i].textContent || '';
-      const currentNode = headings[i];
-      const nextNode = headings[i + 1];
-
-      const sectionElements: Element[] = [];
-      let sibling = currentNode.nextElementSibling;
-
-      while (sibling && sibling !== nextNode) {
-        sectionElements.push(sibling);
-        sibling = sibling.nextElementSibling;
-      }
-
-      const wrapper = document.createElement('div');
-      sectionElements.forEach(el => wrapper.appendChild(el.cloneNode(true)));
-      newSections.push({ title, content: wrapper.innerHTML });
-    }
-
-    setSections(newSections);
-  }, [html]);
+export default function AnalysisBox({ analysis, nutrition, recuperation }: Props) {
+  const items = [
+    { title: 'Análisis', content: analysis },
+    { title: 'Nutrición', content: nutrition },
+    { title: 'Recuperación', content: recuperation },
+  ];
 
   return (
-  <>
-    {sections.map(({ title, content }, idx) => (
-      <div className="card training-analysis" key={idx}>
-        <h4 className={`card-title ${syne.className}`}>{title}</h4>
-        <div className="analysis-content" dangerouslySetInnerHTML={{ __html: content }} />
-      </div>
-    ))}
-  </>
-);
-
+    <>
+      {items.map(({ title, content }, idx) =>
+        content ? (
+          <div className="card training-analysis" key={idx}>
+            <h4 className={`card-title ${syne.className}`}>{title}</h4>
+            <div
+              className="analysis-content"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          </div>
+        ) : null
+      )}
+    </>
+  );
 }

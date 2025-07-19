@@ -6,7 +6,7 @@ export type Training = {
   duration: number;
   avgheartrate: number | null;
   avgpower: number | null;
-  weighted_average_watts: number | null;
+  weighted_avg_watts: number | null;
 };
 
 export type Lap = {
