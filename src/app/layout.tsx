@@ -8,10 +8,25 @@ const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
 export const metadata = {
   title: 'PaceAlyzer',
-  description: 'Entrenador virtual inteligente para ciclistas',
+  description: 'Entrenador virtual inteligente',
   icons: {
     icon: '/symbol.png',
   },
+  openGraph: {
+    title: 'PaceAlyzer',
+    description: 'Entrenador virtual inteligente',
+    url: 'https://pacealyzer.onrender.com/',
+    type: 'website',
+    images: [
+      {
+        url: 'https://xtimujswspgehcymyvfr.supabase.co/storage/v1/object/public/assets/cover.png',
+        width: 1200,
+        height: 630,
+        alt: 'PaceAlyzer portada',
+      },
+    ],
+  },
+  metadataBase: new URL('https://pacealyzer.onrender.com'),
 };
 
 export default function RootLayout({
