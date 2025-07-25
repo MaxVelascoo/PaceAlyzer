@@ -19,7 +19,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://xtimujswspgehcymyvfr.supabase.co/storage/v1/object/public/assets/cover.png',
+        url: 'https://xtimujswspgehcymyvfr.supabase.co/storage/v1/object/public/assets//portada.png',
         width: 1200,
         height: 630,
         alt: 'PaceAlyzer portada',
