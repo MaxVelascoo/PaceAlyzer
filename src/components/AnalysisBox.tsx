@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { Syne } from 'next/font/google';
+import ReactMarkdown from 'react-markdown';
 
 type Props = {
   analysis?: string;
@@ -23,10 +24,9 @@ export default function AnalysisBox({ analysis, nutrition, recuperation }: Props
         content ? (
           <div className="card training-analysis" key={idx}>
             <h4 className={`card-title ${syne.className}`}>{title}</h4>
-            <div
-              className="analysis-content"
-              dangerouslySetInnerHTML={{ __html: content }}
-            />
+              <div className="analysis-content prose prose-sm prose-neutral max-w-none text-left not-italic">
+              <ReactMarkdown>{content}</ReactMarkdown>
+            </div>
           </div>
         ) : null
       )}

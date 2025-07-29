@@ -14,7 +14,7 @@ export const metadata = {
   },
   openGraph: {
     title: 'PaceAlyzer',
-    description: 'Entrenador virtual inteligente',
+    description: 'En¡trenador virtual inteligente',
     url: 'https://pacealyzer.onrender.com/',
     type: 'website',
     images: [
@@ -36,6 +36,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body>
         <UserProvider>
           <Header />

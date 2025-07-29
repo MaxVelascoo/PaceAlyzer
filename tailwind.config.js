@@ -7,9 +7,19 @@ module.exports = {
     "./src/pages/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
-    extend: {},
+    extend: {
+      typography: {
+        DEFAULT: {
+          css: {
+            p: { textAlign: 'left' },
+            li: { textAlign: 'left' },
+          },
+        },
+      },
+    },
   },
   plugins: [
     require('@tailwindcss/typography'),
   ],
+
 };
