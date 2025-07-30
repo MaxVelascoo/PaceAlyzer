@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'], weight: ['400'] });
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
-    firstname: '', lastname: '', email: '', telef: '', weight: '', ftp: '', password: ''
+    firstname: '', lastname: '', email: '', telef: '', weight: '', ftp: '', password: '', birthdate: '', max_heartrate: '',
   });
   const router = useRouter();
   const isValid = Object.values(form).every(v => v.trim());
@@ -38,6 +38,8 @@ export default function RegisterPage() {
       telef: form.telef,
       weight: form.weight,
       ftp: form.ftp,
+      birthdate: form.birthdate,
+      max_heartrate: form.max_heartrate,
     });
     if (insertError) return alert('Fallo al guardar datos: ' + insertError.message);
 
@@ -55,6 +57,8 @@ export default function RegisterPage() {
           { name: 'telef', label: 'Teléfono' },
           { name: 'weight', label: 'Peso (kg)', type: 'number' },
           { name: 'ftp', label: 'FTP (W)', type: 'number' },
+          { name: 'birthdate', label: 'Fecha de nacimiento', type: 'date' },
+          { name: 'max_heartrate', label: 'FC máxima (ppm)', type: 'number' },
           { name: 'password', label: 'Contraseña', type: 'password' },
         ].map(({ name, label, type }) => (
           <input

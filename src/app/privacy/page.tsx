@@ -9,10 +9,10 @@ export default function PrivacyPage() {
   return (
     <main className="privacy-container">
       <div className="privacy-content">
-        <h1 className={`privacy-title ${syne.className}`}>Política de Privacidad – WattCoach</h1>
+        <h1 className={`privacy-title ${syne.className}`}>Política de Privacidad – PaceAlyzer</h1>
 
         <p className={`privacy-paragraph ${inter.className}`}>
-          WattCoach es una aplicación que analiza tus entrenamientos deportivos conectándose con tu cuenta de Strava. Recogemos los siguientes datos a través de la API de Strava:
+          PaceAlyzer es una aplicación que analiza tus entrenamientos deportivos conectándose con tu cuenta de Strava. Recogemos los siguientes datos a través de la API de Strava:
         </p>
 
         <ul className={`privacy-list ${inter.className}`}>

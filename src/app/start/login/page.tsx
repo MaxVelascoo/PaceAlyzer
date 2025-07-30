@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Syne, Inter } from 'next/font/google';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/toastProvider/ToastProvider';
 import Link from 'next/link';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
@@ -13,27 +14,29 @@ export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({ email: '', password: '' });
   const isReady = form.email.trim() !== '' && form.password.trim() !== '';
+  const toast = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-const handleLogin = async () => {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: form.email,
-    password: form.password,
-  });
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
 
-  if (error) return alert('Error al iniciar sesión: ' + error.message);
+    if (error) return toast('Error al iniciar sesión: ' + error.message,'error');
 
-  // Forzar recarga del usuario
-  const sessionRes = await supabase.auth.getUser();
-  if (sessionRes.error || !sessionRes.data?.user) {
-    return alert('No se pudo obtener el usuario');
-  }
+    // Forzar recarga del usuario
+    const sessionRes = await supabase.auth.getUser();
+    if (sessionRes.error || !sessionRes.data?.user) {
+      return toast('No se pudo obtener el usuario','error');
+    }
 
-  // Esto actualizará el contexto automáticamente si el contexto está bien configurado
-  router.push('/dashboard');
-};
+    // Esto actualizará el contexto automáticamente si el contexto está bien configurado
+    toast('Inicio de sesión correcto')
+    router.push('/dashboard');
+  };
 
 
   return (
