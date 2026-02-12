@@ -21,6 +21,9 @@ type StravaActivity = {
 };
 
 export async function GET(req: Request) {
+  console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+  console.log("SERVICE_ROLE present:", Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY));
+  
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const stateUserId = searchParams.get('state');
@@ -65,9 +68,13 @@ export async function GET(req: Request) {
   );
 
   if (error) {
-    console.error('Supabase error:', error);
-    return NextResponse.json({ error: 'Database error' }, { status: 500 });
+  console.error('Supabase error:', error);
+  return NextResponse.json(
+    { error: error.message, details: error.details, hint: error.hint, code: error.code },
+    { status: 500 }
+  );
   }
+
 
   // Cargar actividades de los últimos 7 días
   const after = Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60;
