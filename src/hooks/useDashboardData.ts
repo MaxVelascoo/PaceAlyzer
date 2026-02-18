@@ -69,7 +69,7 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
         // 2) Trainings (solo columnas necesarias)
         const { data: trainings, error: trainingsError } = await supabase
           .from('trainings')
-          .select('activity_id, date, duration, distance, avgheartrate, weighted_average_watts')
+          .select('activity_id, name, date, duration, distance, avgheartrate, weighted_average_watts')
           .eq('user_id', userId)
           .gte('date', startStr)
           .lte('date', endStr);

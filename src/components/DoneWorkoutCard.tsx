@@ -95,6 +95,19 @@
         {/* Header */}
         <div className={styles.doneNewHeader}>
             <h4 className={styles.doneNewTitle}>{training.name || 'Entreno de ciclismo'}</h4>
+            <a 
+                href={`https://www.strava.com/activities/${training.activity_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.stravaButton}
+                title="Ver en Strava"
+            >
+                <img 
+                    src="/view_on_strava_Button.png" 
+                    alt="Ver en Strava" 
+                    className={styles.stravaButtonImg}
+                />
+            </a>
         </div>
 
         {/* Stats grid */}
