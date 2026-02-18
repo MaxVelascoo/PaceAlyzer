@@ -60,8 +60,10 @@ async function fetchStravaActivities(accessToken: string, afterEpoch: number) {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json(); // ✅ solo una vez
+    const body = await req.json();
     const userId = body.userId as string | undefined;
+    const startDate = body.startDate as string | undefined; // YYYY-MM-DD
+    const endDate = body.endDate as string | undefined; // YYYY-MM-DD
     const lookbackDays = Number(body.lookbackDays ?? 30);
 
     if (!userId) {
@@ -78,25 +80,34 @@ export async function POST(req: Request) {
     if (accErr) throw accErr;
     if (!acc) return NextResponse.json({ error: 'No Strava account' }, { status: 400 });
 
-    // 2) determinar desde cuándo sincronizar (última fecha guardada o lookback)
-    const { data: lastRow, error: lastErr } = await supabaseAdmin
-      .from('trainings')
-      .select('date')
-      .eq('user_id', userId)
-      .order('date', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // 2) determinar desde cuándo sincronizar
+    let afterEpoch: number;
+    
+    if (startDate && endDate) {
+      // Si se proporcionan fechas específicas, usar startDate
+      const start = new Date(startDate);
+      afterEpoch = Math.floor(start.getTime() / 1000);
+    } else {
+      // Fallback: usar última fecha guardada o lookbackDays
+      const { data: lastRow, error: lastErr } = await supabaseAdmin
+        .from('trainings')
+        .select('date')
+        .eq('user_id', userId)
+        .order('date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (lastErr) throw lastErr;
+      if (lastErr) throw lastErr;
 
-    const now = new Date();
-    const fallback = new Date(now);
-    fallback.setDate(now.getDate() - Number(lookbackDays));
+      const now = new Date();
+      const fallback = new Date(now);
+      fallback.setDate(now.getDate() - Number(lookbackDays));
 
-    const sinceDate = lastRow?.date ? new Date(lastRow.date) : fallback;
-    sinceDate.setDate(sinceDate.getDate() - 1); // margen -1 día
+      const sinceDate = lastRow?.date ? new Date(lastRow.date) : fallback;
+      sinceDate.setDate(sinceDate.getDate() - 1); // margen -1 día
 
-    const afterEpoch = Math.floor(sinceDate.getTime() / 1000);
+      afterEpoch = Math.floor(sinceDate.getTime() / 1000);
+    }
 
     // 3) asegurar token válido (refresh si expira)
     const expiresAt = acc.expires_at ?? 0;
@@ -121,22 +132,59 @@ export async function POST(req: Request) {
     const activities = await fetchStravaActivities(accessToken, afterEpoch);
 
     // 5) filtrar ciclismo (Strava types: Ride, VirtualRide, eBikeRide, etc.)
-    const cycling = activities.filter(a =>
+    let cycling = activities.filter(a =>
       ['Ride', 'VirtualRide', 'EBikeRide', 'eBikeRide'].includes(String(a.type))
     );
 
-    // 6) mapear a tu tabla trainings (metros y segundos)
-    const rows = cycling.map(a => ({
-      user_id: userId,
-      activity_id: Number(a.id),
-      name: String(a.name ?? 'Entreno'),
-      type: String(a.type),
-      date: String(a.start_date_local ?? a.start_date).slice(0, 10), // YYYY-MM-DD
-      distance: Number(a.distance), // metros
-      duration: Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)), // segundos
-      avgheartrate: a.average_heartrate ? Number(a.average_heartrate) : null,
-      weighted_average_watts: a.weighted_average_watts ? Number(a.weighted_average_watts) : null,
-    }));
+    // Si se proporcionan fechas específicas, filtrar por rango
+    if (startDate && endDate) {
+      cycling = cycling.filter(a => {
+        const activityDate = String(a.start_date_local ?? a.start_date).slice(0, 10);
+        return activityDate >= startDate && activityDate <= endDate;
+      });
+    }
+
+    // 6) obtener streams (watts y heartrate) para cada actividad
+    const rowsPromises = cycling.map(async (a) => {
+      let powerStream = null;
+      let hrStream = null;
+
+      try {
+        const streamUrl = `https://www.strava.com/api/v3/activities/${a.id}/streams?keys=watts,heartrate&key_by_type=true`;
+        const streamRes = await fetch(streamUrl, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (streamRes.ok) {
+          const streams = await streamRes.json() as Record<string, { data: number[] }>;
+          powerStream = streams.watts?.data || null;
+          hrStream = streams.heartrate?.data || null;
+          
+          console.log(`Activity ${a.id}: power=${powerStream?.length || 0} points, hr=${hrStream?.length || 0} points`);
+        } else {
+          console.warn(`Failed to fetch streams for activity ${a.id}: ${streamRes.status}`);
+        }
+      } catch (err) {
+        console.warn(`Failed to fetch streams for activity ${a.id}:`, err);
+      }
+
+      return {
+        user_id: userId,
+        activity_id: Number(a.id),
+        name: String(a.name ?? 'Entreno'),
+        type: String(a.type),
+        date: String(a.start_date_local ?? a.start_date).slice(0, 10), // YYYY-MM-DD
+        distance: Number(a.distance), // metros
+        duration: Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)), // segundos
+        avgheartrate: a.average_heartrate ? Number(a.average_heartrate) : null,
+        weighted_average_watts: a.weighted_average_watts ? Number(a.weighted_average_watts) : null,
+        altitude: a.total_elevation_gain ? Number(a.total_elevation_gain) : null,
+        power_stream: powerStream,
+        hr_stream: hrStream,
+      };
+    });
+
+    const rows = await Promise.all(rowsPromises);
 
     // 7) UPSERT por activity_id (necesitas unique constraint en DB)
     const { error: upErr } = await supabaseAdmin
@@ -147,7 +195,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       insertedOrUpdated: rows.length,
-      after: sinceDate.toISOString(),
+      dateRange: startDate && endDate ? `${startDate} to ${endDate}` : 'auto',
     });
   } catch (e) {
     const error = e as Error;

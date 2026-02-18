@@ -13,6 +13,7 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
   const [hasStrava, setHasStrava] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [trainingsByDate, setTrainingsByDate] = useState<Record<string, Training[]>>({});
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   const { startOfWeek, endOfWeek } = useMemo(() => {
     const hoy = new Date();
@@ -28,6 +29,10 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
 
     return { startOfWeek: start, endOfWeek: end };
   }, [semanaOffset]);
+
+  const refetch = () => {
+    setRefetchTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     if (!userId) {
@@ -69,7 +74,7 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
         // 2) Trainings (solo columnas necesarias)
         const { data: trainings, error: trainingsError } = await supabase
           .from('trainings')
-          .select('activity_id, name, date, duration, distance, avgheartrate, weighted_average_watts')
+          .select('activity_id, name, date, duration, distance, avgheartrate, weighted_average_watts, altitude, power_stream, hr_stream')
           .eq('user_id', userId)
           .gte('date', startStr)
           .lte('date', endStr);
@@ -113,7 +118,7 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
     return () => {
       cancelled = true;
     };
-  }, [userId, semanaOffset, startOfWeek, endOfWeek]);
+  }, [userId, semanaOffset, startOfWeek, endOfWeek, refetchTrigger]);
 
   useEffect(() => {
     console.groupCollapsed('[useDashboardData] 📦 state update');
@@ -128,5 +133,6 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
     loading,
     trainingsByDate,
     startOfWeek,
+    refetch,
   };
 }

@@ -28,8 +28,8 @@ function DashboardContent() {
 
   const user = useUser()?.user;
 
-  // ✅ hook “limpio” (trainingsByDate)
-  const { hasStrava, loading, trainingsByDate, startOfWeek } = useDashboardData(user?.id, semanaOffset);
+  // ✅ hook "limpio" (trainingsByDate)
+  const { hasStrava, loading, trainingsByDate, startOfWeek, refetch } = useDashboardData(user?.id, semanaOffset);
 
   const mes = startOfWeek.toLocaleString('es-ES', { month: 'long' });
 
@@ -68,18 +68,27 @@ function DashboardContent() {
     try {
       setSyncing(true);
 
+      // Calcular fechas de inicio y fin de la semana actual
+      const startStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
+      const endDate = new Date(startOfWeek);
+      endDate.setDate(startOfWeek.getDate() + 6);
+      const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
       const res = await fetch('/api/strava/sync-trainings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // puedes mandar lookbackDays como fallback si el usuario no tiene entrenos
-        body: JSON.stringify({ userId: user.id, lookbackDays: 30 }),
+        body: JSON.stringify({ 
+          userId: user.id, 
+          startDate: startStr,
+          endDate: endStr
+        }),
       });
 
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Error sincronizando entrenos');
 
-      // ✅ refresh sencillo (rápido). Si quieres “pro pro”, hacemos que el hook exponga refetch().
-      window.location.reload();
+      // Refetch data sin recargar la página
+      refetch();
     } catch (e) {
       const error = e as Error;
       console.error(error);

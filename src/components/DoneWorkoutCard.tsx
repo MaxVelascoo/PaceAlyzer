@@ -2,11 +2,54 @@
     import React from 'react';
     import styles from '@/app/dashboard/dashboard.module.css';
     import { Space_Grotesk } from 'next/font/google';
+    import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
     const spaceGrotesk = Space_Grotesk({
         subsets: ['latin'],
         weight: ['500','600','700'], // recomendable para números
     });
+
+    // Función para formatear tiempo en formato hh:mm:ss o mm:ss
+    function formatTime(seconds: number): string {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        
+        if (h > 0) {
+            return `${h}h${m}min`;
+        }
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Función para calcular ticks del eje X basado en duración
+    function calculateXTicks(dataLength: number): number[] {
+        const totalSeconds = dataLength;
+        const totalMinutes = totalSeconds / 60;
+        
+        let intervalMinutes: number;
+        
+        if (totalMinutes <= 15) {
+            intervalMinutes = 5; // cada 5 min
+        } else if (totalMinutes <= 30) {
+            intervalMinutes = 10; // cada 10 min
+        } else if (totalMinutes <= 60) {
+            intervalMinutes = 15; // cada 15 min
+        } else if (totalMinutes <= 120) {
+            intervalMinutes = 30; // cada 30 min
+        } else {
+            intervalMinutes = 60; // cada 1 hora
+        }
+        
+        const ticks: number[] = [0];
+        let current = intervalMinutes * 60;
+        
+        while (current < totalSeconds) {
+            ticks.push(current);
+            current += intervalMinutes * 60;
+        }
+        
+        return ticks;
+    }
 
 
     export type DoneTraining = {
@@ -17,7 +60,9 @@
     distance?: number | null; // metros
     weighted_average_watts?: number | null; // Pot. Norm
     avgheartrate?: number | null; // FC media
-    total_elevation_gain?: number | null; // opcional si lo tienes
+    altitude?: number | null; // altitud ganada
+    power_stream?: number[] | null;
+    hr_stream?: number[] | null;
     };
 
     function formatDuration(totalSec: number | null | undefined) {
@@ -49,6 +94,12 @@
     return `${Math.round(m)} m`;
     }
 
+    function formatSpeed(distanceMeters: number | null | undefined, durationSec: number | null | undefined) {
+    if (distanceMeters == null || durationSec == null || durationSec === 0) return '—';
+    const kmh = (distanceMeters / 1000) / (durationSec / 3600);
+    return `${kmh.toFixed(1)} km/h`;
+    }
+
     type StatCard = {
     icon: React.ReactNode;
     value: string;
@@ -77,15 +128,15 @@
         tone: 'orange',
         },
         {
-        icon: <span aria-hidden className={styles.statIcon}>❤️</span>,
-        value: formatBpm(training.avgheartrate),
-        label: 'FC Media',
+        icon: <span aria-hidden className={styles.statIcon}>🚴</span>,
+        value: formatSpeed(training.distance, training.duration),
+        label: 'Vel. Media',
         tone: 'pink',
         },
         {
-        icon: <span aria-hidden className={styles.statIcon}>⚡️</span>,
-        value: formatWatts(training.weighted_average_watts),
-        label: 'Pot. Norm.',
+        icon: <span aria-hidden className={styles.statIcon}>⛰️</span>,
+        value: formatElevation(training.altitude),
+        label: 'Altitud',
         tone: 'yellow',
         },
     ];
@@ -125,7 +176,7 @@
             ))}
         </div>
 
-        {/* Power chart placeholder */}
+        {/* Power chart */}
         <div className={styles.chartCard}>
             <div className={styles.chartHeader}>
             <h5 className={styles.chartTitle}>Potencia</h5>
@@ -134,13 +185,46 @@
             </span>
             </div>
 
-            <div className={styles.chartPlaceholder}>
-            <div className={styles.chartSkeleton} />
-            <p className={styles.chartHint}>Próximamente: gráfica de potencia (stream de Strava).</p>
-            </div>
+            {training.power_stream && training.power_stream.length > 0 ? (
+              <div className={`${styles.chartContainer} ${spaceGrotesk.className}`}>
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={training.power_stream.map((watts, idx) => ({ time: idx, watts }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="time" 
+                      stroke="#999"
+                      tick={{ fontSize: 11 }}
+                      ticks={calculateXTicks(training.power_stream.length)}
+                      tickFormatter={(val) => formatTime(val)}
+                    />
+                    <YAxis 
+                      stroke="#999"
+                      tick={{ fontSize: 11 }}
+                      domain={['auto', 'auto']}
+                    />
+                    <Tooltip 
+                      contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+                      labelFormatter={(val) => formatTime(Number(val))}
+                      formatter={(value: number) => [`${value} W`, 'Potencia']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="watts" 
+                      stroke="#fbbf24" 
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className={styles.chartPlaceholder}>
+                <p className={styles.chartHint}>No hay datos de potencia disponibles.</p>
+              </div>
+            )}
         </div>
 
-        {/* HR chart placeholder */}
+        {/* HR chart */}
         <div className={styles.chartCard}>
             <div className={styles.chartHeader}>
             <h5 className={styles.chartTitle}>Frecuencia cardíaca</h5>
@@ -149,16 +233,43 @@
             </span>
             </div>
 
-            <div className={styles.chartPlaceholder}>
-            <div className={styles.chartSkeleton} />
-            <p className={styles.chartHint}>Próximamente: gráfica de FC (stream de Strava).</p>
-            </div>
-        </div>
-
-        {/* Footer / extra row (opcional) */}
-        <div className={styles.doneFooterRow}>
-            <span className={styles.footerLabel}>Altitud</span>
-            <span className={`${styles.footerValue} ${spaceGrotesk.className}`}>{formatElevation(training.total_elevation_gain)}</span>
+            {training.hr_stream && training.hr_stream.length > 0 ? (
+              <div className={`${styles.chartContainer} ${spaceGrotesk.className}`}>
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={training.hr_stream.map((bpm, idx) => ({ time: idx, bpm }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="time" 
+                      stroke="#999"
+                      tick={{ fontSize: 11 }}
+                      ticks={calculateXTicks(training.hr_stream.length)}
+                      tickFormatter={(val) => formatTime(val)}
+                    />
+                    <YAxis 
+                      stroke="#999"
+                      tick={{ fontSize: 11 }}
+                      domain={['auto', 'auto']}
+                    />
+                    <Tooltip 
+                      contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
+                      labelFormatter={(val) => formatTime(Number(val))}
+                      formatter={(value: number) => [`${value} ppm`, 'FC']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="bpm" 
+                      stroke="#f472b6" 
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className={styles.chartPlaceholder}>
+                <p className={styles.chartHint}>No hay datos de frecuencia cardíaca disponibles.</p>
+              </div>
+            )}
         </div>
         </div>
     );
