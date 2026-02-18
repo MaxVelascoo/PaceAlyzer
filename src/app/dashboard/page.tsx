@@ -1,14 +1,16 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Syne } from 'next/font/google';
 import { useUser } from '@/context/userContext';
-import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import WeekHeader from '@/components/WeekHeader';
-import TrainingSummaryCard from '@/components/TrainingSummaryCard';
-import LapsBarChart from '@/components/LapsBarChart';
-import AnalysisBox from '@/components/AnalysisBox';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import PlannedWorkoutCard from '@/components/PlannedWorkoutCard';
+import { usePlannedWorkout } from '@/hooks/usePlannedWorkout';
+import DoneWorkoutCard from '@/components/DoneWorkoutCard';
+
+
+import styles from './dashboard.module.css';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -25,105 +27,156 @@ function DashboardContent() {
   }, [semanaOffset, hoyDia]);
 
   const user = useUser()?.user;
-  const router = useRouter();
 
-  const {
-    hasStrava,
-    loading,
-    trainingsByDate,
-    lapsByActivity,
-    analysisByActivity,
-    startOfWeek,
-  } = useDashboardData(user?.id, semanaOffset);
+  // ✅ hook “limpio” (trainingsByDate)
+  const { hasStrava, loading, trainingsByDate, startOfWeek } = useDashboardData(user?.id, semanaOffset);
 
   const mes = startOfWeek.toLocaleString('es-ES', { month: 'long' });
-  const diasConFechas = dias.map((dia, i) => {
-    const d = new Date(startOfWeek);
-    d.setDate(startOfWeek.getDate() + i);
-    const key = d.toISOString().split('T')[0];
-    return {
-      nombre: dia,
-      numero: d.getDate(),
-      esHoy: semanaOffset === 0 && i === hoyDia,
-      key,
-    };
-  });
+
+  const diasConFechas = useMemo(() => {
+    return dias.map((dia, i) => {
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      // clave LOCAL YYYY-MM-DD
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return {
+        nombre: dia,
+        numero: d.getDate(),
+        esHoy: semanaOffset === 0 && i === hoyDia,
+        key,
+      };
+    });
+  }, [startOfWeek, semanaOffset, hoyDia]);
+
+  const selectedKey = diasConFechas[diaSeleccionado]?.key;
+  const { loading: loadingPlanned, workout: plannedWorkout } = usePlannedWorkout(user?.id, selectedKey);
+  const entreno = selectedKey ? (trainingsByDate[selectedKey] || [])[0] : undefined;
+
+  /** --------- REFRESH / SYNC (PRO) ---------
+   * Estrategia recomendada:
+   * - API server-side: calcula last training date en DB y pide a Strava desde lastDate-1 día
+   * - upsert por activity_id
+   * Aquí en UI solo dispara la sync y luego refetch.
+   */
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const handleSync = async () => {
+    if (!user?.id || syncing) return;
+    setSyncError(null);
+
+    try {
+      setSyncing(true);
+
+      const res = await fetch('/api/strava/sync-trainings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // puedes mandar lookbackDays como fallback si el usuario no tiene entrenos
+        body: JSON.stringify({ userId: user.id, lookbackDays: 30 }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Error sincronizando entrenos');
+
+      // ✅ refresh sencillo (rápido). Si quieres “pro pro”, hacemos que el hook exponga refetch().
+      window.location.reload();
+    } catch (e: any) {
+      console.error(e);
+      setSyncError(e?.message ?? 'Error sincronizando entrenos');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   return (
-    <div className="dashboard">
-      <div className={`mes ${syne.className}`}>
-        {mes.charAt(0).toUpperCase() + mes.slice(1)}
-      </div>
+    <div className={styles.dashboard}>
+      <div className={styles.container}>
+        <div className={`${styles.mes} ${syne.className}`}>
+          {mes.charAt(0).toUpperCase() + mes.slice(1)}
+        </div>
 
-      <WeekHeader
-        diasConFechas={diasConFechas}
-        diaSeleccionado={diaSeleccionado}
-        semanaOffset={semanaOffset}
-        onDiaClick={setDiaSeleccionado}
-        onPrev={() => setSemanaOffset(o => o - 1)}
-        onNext={() => setSemanaOffset(o => o + 1)}
-      />
+        {/* ✅ WeekHeader + botón refresh a la derecha */}
+        <div className={styles.weekHeaderRow}>
+          <WeekHeader
+            diasConFechas={diasConFechas}
+            diaSeleccionado={diaSeleccionado}
+            semanaOffset={semanaOffset}
+            onDiaClick={setDiaSeleccionado}
+            onPrev={() => setSemanaOffset(o => o - 1)}
+            onNext={() => setSemanaOffset(o => o + 1)}
+          />
 
-      <div className="contenido-dia">
-        {loading ? (
-          <p className={syne.className}>Cargando entrenamientos…</p>
-        ) : hasStrava === false ? (
-          <div className="strava-warning">
-            <p className={syne.className}>
-              Para ver tus entrenamientos, necesitas conectar tu cuenta de Strava.
-            </p>
-            <button
-              className="form-button"
-              onClick={() => router.push('/connect-strava')}
-            >
-              Conectar con Strava
-            </button>
+          <button
+            type="button"
+            className={styles.refreshButton}
+            onClick={handleSync}
+            disabled={syncing || !user?.id || hasStrava === false}
+            title={hasStrava === false ? 'Conecta Strava para sincronizar' : 'Sincronizar entrenos'}
+            aria-label="Sincronizar entrenos"
+          >
+            <img
+              src="/refresh-icon.png"
+              alt=""
+              className={syncing ? `${styles.refreshIcon} ${styles.spin}` : styles.refreshIcon}
+            />
+          </button>
+        </div>
+
+        {syncError && <div className={styles.syncError}>{syncError}</div>}
+
+        <div className={styles.contenidoDia}>
+          <div className={styles.twoCardsLayout}>
+            {/* IZQUIERDA: Planificado */}
+            <section className={styles.cardBlock}>
+              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO PLANIFICADO</h3>
+
+              <div className={`${styles.cardShell} ${styles.planned}`}>
+                {!user?.id ? (
+                  <div className={styles.emptyState}><p>No hay usuario</p></div>
+                ) : loadingPlanned ? (
+                  <div className={styles.emptyState}><p>Cargando…</p></div>
+                ) : plannedWorkout ? (
+                  <div className={syne.className}>
+                    <PlannedWorkoutCard workout={plannedWorkout} />
+                  </div>
+                ) : (
+                  <div className={styles.emptyState}>
+                    <p>No hay entreno planificado este día</p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* DERECHA: Hecho */}
+            <section className={styles.cardBlock}>
+              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO HECHO</h3>
+
+              <div className={`${styles.cardShell} ${styles.done}`}>
+                {loading ? (
+                  <div className={styles.emptyState}>
+                    <p>Cargando…</p>
+                  </div>
+                ) : !user?.id ? (
+                  <div className={styles.emptyState}>
+                    <p>No hay usuario</p>
+                  </div>
+                ) : hasStrava === false ? (
+                  <div className={styles.emptyState}>
+                    <p>Conecta Strava para ver tus entrenos</p>
+                  </div>
+                ) : entreno ? (
+                  <div className={syne.className}>
+                    <DoneWorkoutCard training={entreno as any} className={syne.className} />
+                  </div>
+                ) : (
+                  <div className={styles.emptyState}>
+                    <p>No hay entreno registrado este día</p>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
-        ) : (
-          (() => {
-            const key = diasConFechas[diaSeleccionado].key;
-            const entrenos = trainingsByDate[key] || [];
-
-            if (!entrenos.length) {
-              return (
-                <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                  <img
-                    src="/no-training.png"
-                    alt="No training"
-                    style={{ maxWidth: '320px', opacity: 0.7, marginBottom: '20px' }}
-                  />
-                  <p className={syne.className}>
-                    No hay ningún entreno registrado este día
-                  </p>
-                </div>
-              );
-            }
-
-            return entrenos.map(t => {
-              const analysis = analysisByActivity[t.activity_id];
-
-              return (
-                <div className="training-row" key={t.activity_id}>
-                  <div className="column-left">
-                    <TrainingSummaryCard training={t} />
-                    {lapsByActivity[t.activity_id] && (
-                      <LapsBarChart laps={lapsByActivity[t.activity_id]} />
-                    )}
-                  </div>
-                  <div className="column-right">
-                    {analysis && (
-                      <AnalysisBox
-                        analysis={analysis.analysis}
-                        nutrition={analysis.nutrition}
-                        recuperation={analysis.recuperation}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            });
-          })()
-        )}
+        </div>
       </div>
     </div>
   );

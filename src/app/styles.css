@@ -172,107 +172,6 @@ html {
   transform: translateY(0);
 }
 
-/* Dashboard styles */
-.dashboard {
-  padding: 20px;
-  /*background: linear-gradient(135deg, #7b2ff7, #f107a3, #ff6a00);*/
-  background-color: #f0f0f0;
-  min-height: 100vh;
-  box-sizing: border-box;
-}
-
-.dashboard-link {
-  font-size: 1.15rem;
-  margin-right: 15px;
-}
-
-.entreno-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 32px;
-  justify-content: center;
-  margin-top: 40px;
-  padding: 0 20px;
-}
-
-
-.card {
-  break-inside: avoid;
-  width: 100%;
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease;
-  display: inline-block; /* ✅ importante para que Masonry calcule bien la altura */
-}
-
-
-.card:hover {
-  transform: translateY(-4px);
-}
-
-
-.training-summary p,
-.lap-bars .lap-bar,
-.training-analysis {
-  font-size: 15px;
-  margin: 6px 0;
-}
-
-.training-summary ul {
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.laps-bar-chart .lap-bar {
-  background: #ffe0f0;
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 8px;
-}
-
-.analysis-section {
-  line-height: 1.6;
-  font-size: 15px;
-  margin: 0 auto;
-}
-
-
-
-img.no-training {
-  max-width: 220px;
-  margin: 20px auto;
-  opacity: 0.7;
-}
-
-.analysis-content p {
-  text-align: left !important;
-}
-
-
-.analysis-content li {
-  text-align: left !important;
-}
-
-.analysis-content h1,
-.analysis-content h2,
-.analysis-content h3,
-.analysis-content h4,
-.analysis-content h5,
-.analysis-content h6 {
-  text-align: left !important;
-}
-
-
-training-analysis .analysis-content {
-  margin-top: 10px;
-  font-size: 14px;
-  line-height: 1.5;
-  text-align: left;
-}
-
 /* Responsive tweaks */
 @media (max-width: 768px) {
   .entreno-grid {
@@ -916,4 +815,58 @@ training-analysis .analysis-content {
     flex-direction: column;
     gap: 8px;
   }
+}
+
+/* --- Layout de las dos tarjetas --- */
+.two-cards-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+/* Contenedor de cada bloque (título + tarjeta) */
+.card-block {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+}
+
+/* Título sobre cada tarjeta */
+.card-heading {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6a6a75;
+  padding-left: 4px;
+}
+
+/* “Carcasa” de la tarjeta (vacía por ahora) */
+.card-shell {
+  min-height: 380px;                /* altura cómoda para desktop */
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #ececf3;
+  box-shadow: 0 14px 32px rgba(32, 18, 58, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Sutilezas de color para cada tipo */
+.card-shell.planned::before,
+.card-shell.done::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(60% 60% at 0% 0%,
+    rgba(106, 17, 203, 0.10) 0%,
+    rgba(106, 17, 203, 0.00) 60%);
+  z-index: 0;
+}
+
+.card-shell.done::before {
+  background: radial-gradient(60% 60% at 100% 0%,
+    rgba(255, 106, 0, 0.12) 0%,
+    rgba(255, 106, 0, 0.00) 60%);
 }

@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@/context/userContext';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import { Syne } from 'next/font/google';
+import { Syne, Space_Grotesk } from 'next/font/google';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import styles from './profile.module.css';
 import { useToast } from '@/components/toastProvider/ToastProvider';
 
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'] });
 
 type PerfilData = {
   firstname: string;
@@ -27,6 +28,7 @@ export default function PerfilPage() {
   const user = useUser()?.user;
   const router = useRouter();
   const [perfil, setPerfil] = useState<PerfilData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ telef: '', weight: '', ftp: '', birthdate: '', max_heartrate: '' });
@@ -36,25 +38,49 @@ export default function PerfilPage() {
 
   useEffect(() => {
     const fetchPerfil = async () => {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('users')
-        .select('firstname, lastname, email, telef, ftp, weight, avatar_url, birthdate, max_heartrate')
-        .eq('id', user.id)
-        .single();
-      if (data && !error) {
-        setPerfil(data);
-        setForm({
-          telef: data.telef || '',
-          weight: data.weight?.toString() || '',
-          ftp: data.ftp?.toString() || '',
-          birthdate: data.birthdate?.slice(0, 10) || '',
-          max_heartrate: data.max_heartrate?.toString() || '',
-        });
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
+      setLoading(true);
+      
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('firstname, lastname, email, telef, ftp, weight, birthdate, max_heartrate')
+          .eq('id', user.id)
+          .single();
+        
+        console.log('Profile fetch result:', { data, error, userId: user.id });
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          toast('Error al cargar el perfil: ' + (error.message || 'Error desconocido'), 'error');
+          setLoading(false);
+          return;
+        }
+        
+        if (data) {
+          setPerfil({ ...data, avatar_url: null });
+          setForm({
+            telef: data.telef || '',
+            weight: data.weight?.toString() || '',
+            ftp: data.ftp?.toString() || '',
+            birthdate: data.birthdate?.slice(0, 10) || '',
+            max_heartrate: data.max_heartrate?.toString() || '',
+          });
+        }
+      } catch (err) {
+        console.error('Exception fetching profile:', err);
+        toast('Error inesperado al cargar el perfil', 'error');
+      } finally {
+        setLoading(false);
       }
     };
+    
     fetchPerfil();
-  }, [user]);
+  }, [user, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -99,18 +125,15 @@ export default function PerfilPage() {
       const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
       if (!publicUrlData?.publicUrl) throw new Error('No public URL found');
 
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ avatar_url: publicUrlData.publicUrl })
-        .eq('id', user.id);
-      if (updateError) throw updateError;
-
+      // TODO: Agregar columna avatar_url a la tabla users en Supabase
+      toast('Foto subida correctamente (pendiente: agregar columna avatar_url a la BD)', 'error');
+      
       setPerfil(prev =>
         prev ? { ...prev, avatar_url: publicUrlData.publicUrl } : prev
       );
     } catch (err) {
       console.error('Upload failed:', err);
-      alert('Error al subir la imagen');
+      toast('Error al subir la imagen', 'error');
     } finally {
       setUploading(false);
     }
@@ -123,9 +146,11 @@ export default function PerfilPage() {
 
   return (
     <ProtectedRoute>
-      <div className={`${styles.container} ${syne.className}`}>
-        <h2 className={styles.heading}>Tu Perfil</h2>
-        {perfil ? (
+      <div className={`${styles.container} ${spaceGrotesk.className}`}>
+        <h2 className={`${styles.heading} ${syne.className}`}>Tu Perfil</h2>
+        {loading ? (
+          <p>Cargando datos del perfil...</p>
+        ) : perfil ? (
           <>
             <div className={styles.avatarContainer}>
               {perfil.avatar_url ? (
@@ -164,7 +189,7 @@ export default function PerfilPage() {
             </div>
 
             {editing ? (
-              <div className={` ${styles.buttons} ${syne.className} `}>
+              <div className={styles.buttons}>
                 <button onClick={handleUpdate} className={`${styles.save} ${syne.className}`}>Guardar cambios</button>
                 <button onClick={() => setEditing(false)} className={`${styles.cancel} ${syne.className}`}>Cancelar</button>
               </div>
@@ -175,7 +200,7 @@ export default function PerfilPage() {
             <button onClick={handleLogout} className={`${styles.logout} ${syne.className}`}>Cerrar sesión</button>
           </>
         ) : (
-          <p>Cargando datos del perfil...</p>
+          <p>No se pudieron cargar los datos del perfil.</p>
         )}
       </div>
     </ProtectedRoute>

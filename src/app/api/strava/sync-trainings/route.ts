@@ -1,0 +1,156 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // 🔥 solo en server
+);
+
+async function refreshStravaToken(refreshToken: string) {
+  const res = await fetch('https://www.strava.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: process.env.STRAVA_CLIENT_ID!,
+      client_secret: process.env.STRAVA_CLIENT_SECRET!,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Strava token refresh failed: ${text}`);
+  }
+  return res.json() as Promise<{
+    access_token: string;
+    refresh_token: string;
+    expires_at: number;
+  }>;
+}
+
+async function fetchStravaActivities(accessToken: string, afterEpoch: number) {
+  const activities: any[] = [];
+  let page = 1;
+
+  while (true) {
+    const url = new URL('https://www.strava.com/api/v3/athlete/activities');
+    url.searchParams.set('after', String(afterEpoch));
+    url.searchParams.set('per_page', '200');
+    url.searchParams.set('page', String(page));
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Strava activities failed: ${text}`);
+    }
+
+    const batch = (await res.json()) as any[];
+    activities.push(...batch);
+
+    if (batch.length < 200) break;
+    page += 1;
+  }
+
+  return activities;
+}
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json(); // ✅ solo una vez
+    const userId = body.userId as string | undefined;
+    const lookbackDays = Number(body.lookbackDays ?? 30);
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+    }
+
+    // 1) cargar cuenta strava
+    const { data: acc, error: accErr } = await supabaseAdmin
+      .from('strava_accounts')
+      .select('user_id, refresh_token, access_token, expires_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (accErr) throw accErr;
+    if (!acc) return NextResponse.json({ error: 'No Strava account' }, { status: 400 });
+
+    // 2) determinar desde cuándo sincronizar (última fecha guardada o lookback)
+    const { data: lastRow, error: lastErr } = await supabaseAdmin
+      .from('trainings')
+      .select('date')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastErr) throw lastErr;
+
+    const now = new Date();
+    const fallback = new Date(now);
+    fallback.setDate(now.getDate() - Number(lookbackDays));
+
+    const sinceDate = lastRow?.date ? new Date(lastRow.date) : fallback;
+    sinceDate.setDate(sinceDate.getDate() - 1); // margen -1 día
+
+    const afterEpoch = Math.floor(sinceDate.getTime() / 1000);
+
+    // 3) asegurar token válido (refresh si expira)
+    const expiresAt = acc.expires_at ?? 0;
+    let accessToken = acc.access_token;
+
+    if (!accessToken || Date.now() / 1000 > expiresAt - 60) {
+      const t = await refreshStravaToken(acc.refresh_token);
+
+      accessToken = t.access_token;
+
+      await supabaseAdmin
+        .from('strava_accounts')
+        .update({
+          access_token: t.access_token,
+          refresh_token: t.refresh_token,
+          expires_at: t.expires_at,
+        })
+        .eq('user_id', userId);
+    }
+
+    // 4) pedir actividades a Strava
+    const activities = await fetchStravaActivities(accessToken, afterEpoch);
+
+    // 5) filtrar ciclismo (Strava types: Ride, VirtualRide, eBikeRide, etc.)
+    const cycling = activities.filter(a =>
+      ['Ride', 'VirtualRide', 'EBikeRide', 'eBikeRide'].includes(a.type)
+    );
+
+    // 6) mapear a tu tabla trainings (metros y segundos)
+    const rows = cycling.map(a => ({
+      user_id: userId,
+      activity_id: a.id,
+      name: a.name ?? 'Entreno',
+      type: a.type,
+      date: (a.start_date_local ?? a.start_date).slice(0, 10), // YYYY-MM-DD
+      distance: a.distance, // metros
+      duration: Math.round(a.moving_time ?? a.elapsed_time ?? 0), // segundos
+      avgheartrate: a.average_heartrate ?? null,
+      weighted_average_watts: a.weighted_average_watts ?? null,
+    }));
+
+    // 7) UPSERT por activity_id (necesitas unique constraint en DB)
+    const { error: upErr } = await supabaseAdmin
+      .from('trainings')
+      .upsert(rows, { onConflict: 'activity_id' });
+
+    if (upErr) throw upErr;
+
+    return NextResponse.json({
+      insertedOrUpdated: rows.length,
+      after: sinceDate.toISOString(),
+    });
+  } catch (e: any) {
+    console.error(e);
+    return NextResponse.json({ error: e.message ?? 'Unknown error' }, { status: 500 });
+  }
+}

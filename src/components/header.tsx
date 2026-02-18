@@ -27,8 +27,8 @@ export default function Header() {
               src={isHome ? '/logo.png' : '/logo-color.png'}
               alt="PaceAlyzer logo"
               className="header-logo"
-              width={64}
-              height={64}
+              width={isHome ? 1024 : 500}
+              height={isHome ? 1024 : 500}
             />
           </Link>
         </div>

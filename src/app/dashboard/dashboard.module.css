@@ -1,0 +1,583 @@
+/* Página dashboard */
+.dashboard {
+  /* deja un poco de espacio arriba y MUCHO abajo para que no toque el footer */
+  padding-top: 32px;
+  padding-bottom: 120px;         /* ← aire con el footer */
+  background-color: #f0f0f0;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Contenedor centrado con gutters fijos */
+.container {
+  max-width: 1280px;             /* ← controla ancho de contenido */
+  margin: 0 auto;                /* ← centra */
+  padding: 0 32px;               /* ← gutters laterales constantes */
+  box-sizing: border-box;
+}
+
+/* Mes */
+.mes {
+  text-align: center;
+  margin: 10px 0 30px 0;
+  font-size: 1.3rem;
+  color: #a0a0a0;
+}
+
+/* Contenido del día */
+.contenidoDia {
+  text-align: center;
+  font-size: 1.5rem;
+}
+
+/* Dos tarjetas */
+.twoCardsLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin: 32px 0 80px;           /* ← separa del header y del footer */
+}
+
+/* Bloque título + tarjeta */
+.cardBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Títulos centrados, mismo formato que el mes */
+.cardHeading {
+  font-size: 1.3rem;
+  color: #000000;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+/* Tarjetas más altas */
+.cardShell {
+  width: 100%;
+  min-height: 520px;             /* ← un poco más largas */
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #ececf3;
+  box-shadow: 0 14px 32px rgba(32, 18, 58, 0.06);
+  position: relative;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.cardShell:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 42px rgba(32, 18, 58, 0.12);
+  border-color: #dcdff5;
+}
+
+/* Gradientes de marca */
+.planned::before,
+.done::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.9;
+  transition: opacity 160ms ease;
+}
+.planned::before {
+  background: radial-gradient(60% 60% at 0% 0%,
+    rgba(106, 17, 203, 0.10) 0%,
+    rgba(106, 17, 203, 0) 60%);
+}
+.done::before {
+  background: radial-gradient(60% 60% at 100% 0%,
+    rgba(255, 106, 0, 0.12) 0%,
+    rgba(255, 106, 0, 0) 60%);
+}
+.cardShell:hover::before { opacity: 1; }
+
+/* =========================
+   DONE WORKOUT (nuevo diseño)
+   ========================= */
+
+.doneNew{
+  height: 100%;
+  padding: 26px 26px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.doneNewHeader{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.doneNewEmoji{
+  font-size: 22px;
+  line-height: 1;
+}
+
+.doneNewTitle{
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #0f0f14;
+}
+
+/* Stats */
+.statsGrid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statCard{
+  border-radius: 14px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 10px 18px rgba(15,15,20,0.06);
+  border: 1px solid rgba(15,15,20,0.06);
+}
+
+.statTop{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statIcon{
+  font-size: 18px;
+  line-height: 1;
+}
+
+.statValue{
+  font-size: 18px;
+  font-weight: 900;
+  color: #0f0f14;
+  letter-spacing: -0.01em;
+}
+
+.statLabel{
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(15,15,20,0.55);
+}
+
+/* Tonos (muy parecidos a tu mock) */
+.tone_violet{
+  background: rgba(168, 141, 255, 0.18);
+}
+
+.tone_orange{
+  background: rgba(255, 196, 143, 0.24);
+}
+
+.tone_pink{
+  background: rgba(255, 158, 178, 0.20);
+}
+
+.tone_yellow{
+  background: rgba(255, 215, 130, 0.22);
+}
+
+/* Chart cards (estructura lista para meter gráfica luego) */
+.chartCard{
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(15,15,20,0.06);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 12px 22px rgba(15,15,20,0.06);
+}
+
+.chartHeader{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.chartTitle{
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #0f0f14;
+}
+
+.chartMeta{
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(15,15,20,0.55);
+}
+
+.chartMeta strong{
+  color: #0f0f14;
+  font-weight: 900;
+}
+
+/* Placeholder de gráfica */
+.chartPlaceholder{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chartSkeleton{
+  height: 120px;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(15,15,20,0.05),
+    rgba(15,15,20,0.09),
+    rgba(15,15,20,0.05)
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+@keyframes shimmer{
+  0%{ background-position: 0% 0; }
+  100%{ background-position: 200% 0; }
+}
+
+.chartHint{
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(15,15,20,0.50);
+}
+
+/* Footer row */
+.doneFooterRow{
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15,15,20,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footerLabel{
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(15,15,20,0.55);
+}
+
+.footerValue{
+  font-size: 14px;
+  font-weight: 900;
+  color: #0f0f14;
+}
+
+/* Responsive por si se hace estrecho */
+@media (max-width: 1050px){
+  .statsGrid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* Estado vacío por si no hay entreno */
+.emptyState {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  color: #8a8a95;
+  font-size: 1rem;
+}
+
+.weekHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+/* WeekHeader usa clase global .week-header */
+.weekHeaderRow :global(.week-header) {
+  flex: 1;
+  max-width: 900px;
+}
+
+/* refresh button */
+.refreshButton {
+  width: 48px;
+  aspect-ratio: 1 / 1;  /* ✅ siempre cuadrado */
+  height: auto;        /* 👈 mismo valor que width */
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 50%;  /* 👈 mejor que 999px */
+  flex: 0 0 48px;
+  padding: 0;          /* 👈 muy importante */
+  
+  display: flex;       /* 👈 cambiamos grid por flex */
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+  line-height: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+}
+
+.refreshButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.refreshButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.refreshIcon {
+  width: 50px;
+  height: 50px;
+  display: block;   
+}
+
+.spin {
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.syncError {
+  margin: 10px auto 0;
+  max-width: 900px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff0f0;
+  border: 1px solid #ffd2d2;
+  color: #8a2a2a;
+  font-size: 0.95rem;
+}
+
+/* =========================
+   Planned workout card (Syne + jerarquía consistente)
+   ========================= */
+
+.plannedInner{
+  height: 100%;
+  padding: 26px 26px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: inherit; /* el Syne te lo aporta el layout */
+  text-align: left;     /* <-- clave: nada centrado */
+}
+
+/* Header */
+.plannedTop{
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.plannedTitle{
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f0f14;
+}
+
+.plannedSubtitle{
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: rgba(15,15,20,0.62);
+  max-width: 60ch;
+}
+
+/* Chart */
+.zoneChart{
+  position: relative;
+  padding: 18px 0 18px;
+  border-top: 1px solid rgba(15,15,20,0.08);
+  border-bottom: 1px solid rgba(15,15,20,0.08);
+}
+
+.zoneChartGrid{
+  position:absolute;
+  inset: 18px 0 18px 0;
+  background-image: linear-gradient(to top, rgba(15,15,20,0.06) 1px, transparent 1px);
+  background-size: 100% 22px;
+  pointer-events:none;
+  opacity: 0.65;
+}
+
+.zoneBars{
+  position: relative;
+  height: 78px;                /* altura total del “contenedor” */
+  display:flex;
+  align-items: flex-end;       /* <-- clave: todos apoyan abajo */
+  gap: 8px;
+  width: 100%;
+}
+
+.zoneSeg{
+  border-radius: 14px;
+  box-shadow: 0 10px 18px rgba(15,15,20,0.08);
+  min-width: 8px;
+}
+
+/* Colores por zona (puedes ajustarlos a tu paleta) */
+.zone_Z1{ background: rgba(120, 170, 255, 0.45); }
+.zone_Z2{ background: rgba(120, 200, 255, 0.70); }
+.zone_Z3{ background: rgba(165, 130, 255, 0.72); }
+.zone_Z4{ background: rgba(255, 210, 110, 0.88); }
+.zone_Z5{ background: rgba(255, 175, 95, 0.92); }
+.zone_Z6{ background: rgba(255, 120, 140, 0.94); }
+.zone_Z7{ background: rgba(255, 80, 115, 0.96); }
+
+/* Steps */
+.stepsSection{
+  text-align: left;
+}
+
+.stepsListTop{
+  margin: 0;
+  padding-left: 22px;
+  display:flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.stepRowTop{
+  list-style-position: outside;
+}
+
+.stepBlock{
+  text-align: left;
+}
+
+.repeatChildren{
+  margin-top: 10px;
+  display:flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.repeatChildRow{
+  display:flex;
+  align-items:flex-start;
+  gap: 10px;
+}
+
+.repeatChildContent{
+  flex: 1;
+}
+
+.bullet{
+  margin-top: 6px;
+  font-size: 16px;
+  color: rgba(15,15,20,0.45);
+  line-height: 1;
+}
+
+.stepsList{
+  margin: 0;
+  padding-left: 22px; /* numeración a la izquierda */
+  display:flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stepRow{
+  list-style-position: outside;
+  text-align: left;
+}
+
+.stepLine{
+  display:flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stepName{
+  font-size: 18px;
+  font-weight: 800; /* patrón: nombre del paso siempre fuerte */
+  color: #0f0f14;
+  letter-spacing: -0.01em;
+}
+
+.stepDur{
+  font-size: 18px;
+  font-weight: 700;
+  color: rgba(15,15,20,0.70);
+}
+
+.stepZone{
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600; /* patrón: zona medio */
+  color: rgba(15,15,20,0.62);
+}
+
+.stepHint{
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 500; /* patrón: hint más ligero */
+  color: rgba(15,15,20,0.50);
+}
+
+/* Repeat row */
+.stepRepeat{
+  display:flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stepRepeatTitle{
+  font-size: 20px;
+  font-weight: 900; /* patrón: Repeat muy destacado */
+  letter-spacing: -0.01em;
+  color: #0f0f14;
+}
+
+.stepRepeatLabel{
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(15,15,20,0.55);
+}
+
+/* Footer */
+.plannedFooter{
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(15,15,20,0.08);
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totalLabel{
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(15,15,20,0.60);
+}
+
+.totalValue{
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f0f14;
+}
