@@ -144,7 +144,7 @@ function renderStep(step: Step, level: number): React.ReactNode {
 }
 
 export default function PlannedWorkoutCard({ workout }: { workout: PlannedWorkout }) {
-  const steps = workout?.structure?.steps ?? [];
+  const steps = useMemo(() => workout?.structure?.steps ?? [], [workout?.structure?.steps]);
   const flat = useMemo(() => flattenSteps(steps), [steps]);
   const total = useMemo(() => flat.reduce((acc, it) => acc + (it.duration_s || 0), 0), [flat]);
 

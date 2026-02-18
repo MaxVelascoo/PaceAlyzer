@@ -29,7 +29,7 @@ export function usePlannedWorkout(userId: string | undefined, dateKey: string | 
         setError(error.message);
         setWorkout(null);
       } else {
-        setWorkout((data as any) ?? null);
+        setWorkout((data as PlannedWorkout) ?? null);
       }
 
       setLoading(false);

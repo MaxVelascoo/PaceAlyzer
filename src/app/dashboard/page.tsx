@@ -80,9 +80,10 @@ function DashboardContent() {
 
       // ✅ refresh sencillo (rápido). Si quieres “pro pro”, hacemos que el hook exponga refetch().
       window.location.reload();
-    } catch (e: any) {
-      console.error(e);
-      setSyncError(e?.message ?? 'Error sincronizando entrenos');
+    } catch (e) {
+      const error = e as Error;
+      console.error(error);
+      setSyncError(error?.message ?? 'Error sincronizando entrenos');
     } finally {
       setSyncing(false);
     }
@@ -166,7 +167,7 @@ function DashboardContent() {
                   </div>
                 ) : entreno ? (
                   <div className={syne.className}>
-                    <DoneWorkoutCard training={entreno as any} className={syne.className} />
+                    <DoneWorkoutCard training={entreno} className={syne.className} />
                   </div>
                 ) : (
                   <div className={styles.emptyState}>

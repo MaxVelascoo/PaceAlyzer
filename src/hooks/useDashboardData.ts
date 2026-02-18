@@ -91,7 +91,7 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
         if (cancelled) return;
 
         const grouped: Record<string, Training[]> = {};
-        (trainings ?? []).forEach((t: any) => {
+        (trainings ?? []).forEach((t: Training) => {
           (grouped[t.date] ||= []).push(t);
         });
 

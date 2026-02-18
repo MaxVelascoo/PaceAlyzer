@@ -11,7 +11,7 @@ export default function PublicRoute({ children }: { children: React.ReactNode })
     if (user) {
       router.replace('/dashboard');
     }
-  }, [user]);
+  }, [user, router]);
 
   if (user) return null;
 

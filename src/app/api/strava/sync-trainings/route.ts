@@ -30,7 +30,7 @@ async function refreshStravaToken(refreshToken: string) {
 }
 
 async function fetchStravaActivities(accessToken: string, afterEpoch: number) {
-  const activities: any[] = [];
+  const activities: Array<Record<string, unknown>> = [];
   let page = 1;
 
   while (true) {
@@ -48,7 +48,7 @@ async function fetchStravaActivities(accessToken: string, afterEpoch: number) {
       throw new Error(`Strava activities failed: ${text}`);
     }
 
-    const batch = (await res.json()) as any[];
+    const batch = (await res.json()) as Array<Record<string, unknown>>;
     activities.push(...batch);
 
     if (batch.length < 200) break;
@@ -122,20 +122,20 @@ export async function POST(req: Request) {
 
     // 5) filtrar ciclismo (Strava types: Ride, VirtualRide, eBikeRide, etc.)
     const cycling = activities.filter(a =>
-      ['Ride', 'VirtualRide', 'EBikeRide', 'eBikeRide'].includes(a.type)
+      ['Ride', 'VirtualRide', 'EBikeRide', 'eBikeRide'].includes(String(a.type))
     );
 
     // 6) mapear a tu tabla trainings (metros y segundos)
     const rows = cycling.map(a => ({
       user_id: userId,
-      activity_id: a.id,
-      name: a.name ?? 'Entreno',
-      type: a.type,
-      date: (a.start_date_local ?? a.start_date).slice(0, 10), // YYYY-MM-DD
-      distance: a.distance, // metros
-      duration: Math.round(a.moving_time ?? a.elapsed_time ?? 0), // segundos
-      avgheartrate: a.average_heartrate ?? null,
-      weighted_average_watts: a.weighted_average_watts ?? null,
+      activity_id: Number(a.id),
+      name: String(a.name ?? 'Entreno'),
+      type: String(a.type),
+      date: String(a.start_date_local ?? a.start_date).slice(0, 10), // YYYY-MM-DD
+      distance: Number(a.distance), // metros
+      duration: Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)), // segundos
+      avgheartrate: a.average_heartrate ? Number(a.average_heartrate) : null,
+      weighted_average_watts: a.weighted_average_watts ? Number(a.weighted_average_watts) : null,
     }));
 
     // 7) UPSERT por activity_id (necesitas unique constraint en DB)
@@ -149,8 +149,9 @@ export async function POST(req: Request) {
       insertedOrUpdated: rows.length,
       after: sinceDate.toISOString(),
     });
-  } catch (e: any) {
-    console.error(e);
-    return NextResponse.json({ error: e.message ?? 'Unknown error' }, { status: 500 });
+  } catch (e) {
+    const error = e as Error;
+    console.error(error);
+    return NextResponse.json({ error: error.message ?? 'Unknown error' }, { status: 500 });
   }
 }
