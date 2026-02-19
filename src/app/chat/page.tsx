@@ -8,7 +8,7 @@ import { useUser } from '@/context/userContext';
 import { usePlannedWorkout } from '@/hooks/usePlannedWorkout';
 import { supabase } from '@/lib/supabaseClient';
 
-import ChatSidebar, { WeekDay } from '@/components/chat/ChatSidebar';
+import ChatSidebar, { WeekDay } from '@/components/chat/ChatSideBar';
 import ChatThread, { ChatMessage } from '@/components/chat/ChatThread';
 import MessageComposer from '@/components/chat/MessageComposer';
 
