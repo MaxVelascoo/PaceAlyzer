@@ -2,7 +2,7 @@
     import React from 'react';
     import styles from '@/app/dashboard/dashboard.module.css';
     import { Space_Grotesk } from 'next/font/google';
-    import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+    import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
     const spaceGrotesk = Space_Grotesk({
         subsets: ['latin'],
