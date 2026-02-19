@@ -2,7 +2,7 @@
     import React from 'react';
     import styles from '@/app/dashboard/dashboard.module.css';
     import { Space_Grotesk } from 'next/font/google';
-    import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+    import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
     const spaceGrotesk = Space_Grotesk({
         subsets: ['latin'],
@@ -188,7 +188,13 @@
             {training.power_stream && training.power_stream.length > 0 ? (
               <div className={`${styles.chartContainer} ${spaceGrotesk.className}`}>
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={training.power_stream.map((watts, idx) => ({ time: idx, watts }))}>
+                  <AreaChart data={training.power_stream.map((watts, idx) => ({ time: idx, watts }))}>
+                    <defs>
+                      <linearGradient id="powerGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#a78bfa" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
                       dataKey="time" 
@@ -207,14 +213,14 @@
                       labelFormatter={(val) => formatTime(Number(val))}
                       formatter={(value: number) => [`${value} W`, 'Potencia']}
                     />
-                    <Line 
+                    <Area 
                       type="monotone" 
                       dataKey="watts" 
-                      stroke="#fbbf24" 
+                      stroke="#8b5cf6" 
                       strokeWidth={2}
-                      dot={false}
+                      fill="url(#powerGradient)"
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             ) : (
@@ -236,7 +242,13 @@
             {training.hr_stream && training.hr_stream.length > 0 ? (
               <div className={`${styles.chartContainer} ${spaceGrotesk.className}`}>
                 <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={training.hr_stream.map((bpm, idx) => ({ time: idx, bpm }))}>
+                  <AreaChart data={training.hr_stream.map((bpm, idx) => ({ time: idx, bpm }))}>
+                    <defs>
+                      <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ef4444" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#ef4444" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis 
                       dataKey="time" 
@@ -255,14 +267,14 @@
                       labelFormatter={(val) => formatTime(Number(val))}
                       formatter={(value: number) => [`${value} ppm`, 'FC']}
                     />
-                    <Line 
+                    <Area 
                       type="monotone" 
                       dataKey="bpm" 
-                      stroke="#f472b6" 
+                      stroke="#dc2626" 
                       strokeWidth={2}
-                      dot={false}
+                      fill="url(#hrGradient)"
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
             ) : (

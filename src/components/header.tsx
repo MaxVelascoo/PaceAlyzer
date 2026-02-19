@@ -37,6 +37,9 @@ export default function Header() {
           <nav className="nav">
             {user ? (
               <>
+                <Link href="/chat" className={`nav-link ${syne.className}`}>
+                  Chat
+                </Link>
                 <Link href="/dashboard" className={`nav-link dashboard-link ${syne.className}`}>
                   Dashboard
                 </Link>

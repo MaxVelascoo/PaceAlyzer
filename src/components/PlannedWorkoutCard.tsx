@@ -2,7 +2,10 @@
 import React, { useMemo } from 'react';
 import styles from '@/app/dashboard/dashboard.module.css';
 import { Space_Grotesk } from 'next/font/google';
+import Link from 'next/link';
+import { Syne } from 'next/font/google';
 
+const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['500', '600', '700'],
@@ -205,6 +208,14 @@ export default function PlannedWorkoutCard({ workout }: { workout: PlannedWorkou
         <span className={styles.totalLabel}>Duración total</span>
         <span className={`${styles.totalValue} ${spaceGrotesk.className}`}>{formatStepDuration(total)}</span>
       </footer>
+
+      {/* Chat CTA */}
+      <div className={styles.chatCTA}>
+        <p className={styles.chatCTAText}>¿Quieres modificar este entreno?</p>
+        <Link href="/chat" className={`${styles.chatButton} ${syne.className}`}>
+            Hablar con Pazey
+        </Link>
+      </div>
     </div>
   );
 }

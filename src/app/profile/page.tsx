@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { useUser } from '@/context/userContext';
 import { supabase } from '@/lib/supabaseClient';
@@ -7,7 +8,6 @@ import { Syne, Space_Grotesk } from 'next/font/google';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import styles from './profile.module.css';
 import { useToast } from '@/components/toastProvider/ToastProvider';
-
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'] });
@@ -19,7 +19,7 @@ type PerfilData = {
   telef: string;
   weight: number;
   ftp: number;
-  avatar_url: string | null;
+  avatar_url: string | null; // OJO: en UI guardaremos signedUrl; en BD guardas filePath
   birthdate: string;
   max_heartrate: number;
 };
@@ -27,14 +27,30 @@ type PerfilData = {
 export default function PerfilPage() {
   const user = useUser()?.user;
   const router = useRouter();
+  const toast = useToast();
+
   const [perfil, setPerfil] = useState<PerfilData | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ telef: '', weight: '', ftp: '', birthdate: '', max_heartrate: '' });
-  const toast = useToast();
 
+  const [form, setForm] = useState({
+    telef: '',
+    weight: '',
+    ftp: '',
+    birthdate: '',
+    max_heartrate: '',
+  });
 
+  // Helper: genera signed url (privado) a partir de filePath guardado en BD
+  const getSignedAvatarUrl = async (filePath: string) => {
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .createSignedUrl(filePath, 60 * 60); // 1h
+
+    if (error) throw error;
+    return data?.signedUrl ?? null;
+  };
 
   useEffect(() => {
     const fetchPerfil = async () => {
@@ -42,27 +58,49 @@ export default function PerfilPage() {
         setLoading(false);
         return;
       }
-      
+
       setLoading(true);
-      
+
       try {
+        // OJO: incluimos avatar_url (filePath) desde users
         const { data, error } = await supabase
           .from('users')
-          .select('firstname, lastname, email, telef, ftp, weight, birthdate, max_heartrate')
+          .select('firstname, lastname, email, telef, ftp, weight, birthdate, max_heartrate, avatar_url')
           .eq('id', user.id)
           .single();
-        
-        console.log('Profile fetch result:', { data, error, userId: user.id });
-        
+
         if (error) {
           console.error('Error fetching profile:', error);
           toast('Error al cargar el perfil: ' + (error.message || 'Error desconocido'), 'error');
           setLoading(false);
           return;
         }
-        
+
         if (data) {
-          setPerfil({ ...data, avatar_url: null });
+          // data.avatar_url en BD es filePath (ej: "<uid>/123.jpg")
+          let signedAvatar: string | null = null;
+
+          if (data.avatar_url) {
+            try {
+              signedAvatar = await getSignedAvatarUrl(data.avatar_url);
+            } catch (e) {
+              console.warn('No se pudo generar signed URL del avatar:', e);
+              signedAvatar = null;
+            }
+          }
+
+          setPerfil({
+            firstname: data.firstname,
+            lastname: data.lastname,
+            email: data.email,
+            telef: data.telef || '',
+            weight: data.weight ?? 0,
+            ftp: data.ftp ?? 0,
+            birthdate: data.birthdate || '',
+            max_heartrate: data.max_heartrate ?? 0,
+            avatar_url: signedAvatar, // en UI guardamos la signedUrl para el <img>
+          });
+
           setForm({
             telef: data.telef || '',
             weight: data.weight?.toString() || '',
@@ -78,7 +116,7 @@ export default function PerfilPage() {
         setLoading(false);
       }
     };
-    
+
     fetchPerfil();
   }, [user, toast]);
 
@@ -101,36 +139,58 @@ export default function PerfilPage() {
       .eq('id', user.id);
 
     if (error) {
-      toast('Error al guardar los cambios','error');
+      toast('Error al guardar los cambios', 'error');
       return;
     }
 
-    setPerfil(prev => prev ? { ...prev, ...form, weight: Number(form.weight), ftp: Number(form.ftp), max_heartrate: Number(form.max_heartrate) } : prev);
+    setPerfil((prev) =>
+      prev
+        ? {
+            ...prev,
+            telef: form.telef,
+            weight: Number(form.weight),
+            ftp: Number(form.ftp),
+            birthdate: form.birthdate,
+            max_heartrate: Number(form.max_heartrate),
+          }
+        : prev
+    );
+
     setEditing(false);
-    toast('Datos actualizados correctamente',);
+    toast('Datos actualizados correctamente');
   };
 
   const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0] || !user) return;
+
     setUploading(true);
+
     try {
       const file = e.target.files[0];
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `${user.id}/${fileName}`; // <- clave para RLS
 
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
+      // 1) Subir (privado). upsert true por si repites nombre (aquí no debería)
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
       if (uploadError) throw uploadError;
 
-      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      if (!publicUrlData?.publicUrl) throw new Error('No public URL found');
+      // 2) Guardar filePath en la BD (no la URL)
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ avatar_url: filePath })
+        .eq('id', user.id);
 
-      // TODO: Agregar columna avatar_url a la tabla users en Supabase
-      toast('Foto subida correctamente (pendiente: agregar columna avatar_url a la BD)', 'error');
-      
-      setPerfil(prev =>
-        prev ? { ...prev, avatar_url: publicUrlData.publicUrl } : prev
-      );
+      if (dbError) throw dbError;
+
+      // 3) Crear signed URL para mostrarlo en UI
+      const signedUrl = await getSignedAvatarUrl(filePath);
+
+      setPerfil((prev) => (prev ? { ...prev, avatar_url: signedUrl } : prev));
+      toast('Foto subida correctamente');
     } catch (err) {
       console.error('Upload failed:', err);
       toast('Error al subir la imagen', 'error');
@@ -148,6 +208,7 @@ export default function PerfilPage() {
     <ProtectedRoute>
       <div className={`${styles.container} ${spaceGrotesk.className}`}>
         <h2 className={`${styles.heading} ${syne.className}`}>Tu Perfil</h2>
+
         {loading ? (
           <p>Cargando datos del perfil...</p>
         ) : perfil ? (
@@ -158,6 +219,7 @@ export default function PerfilPage() {
               ) : (
                 <div className={styles.avatarPlaceholder}>Sube tu foto</div>
               )}
+
               <label className={styles.uploadLabel}>
                 {uploading ? 'Cargando...' : 'Cambiar foto'}
                 <input type="file" accept="image/*" onChange={uploadAvatar} hidden />
@@ -165,39 +227,81 @@ export default function PerfilPage() {
             </div>
 
             <div className={styles.fields}>
-              <p><strong>Nombre:</strong> {perfil.firstname}</p>
-              <p><strong>Apellidos:</strong> {perfil.lastname}</p>
-              <p><strong>Email:</strong> {perfil.email}</p>
+              <p>
+                <strong>Nombre:</strong> {perfil.firstname}
+              </p>
+              <p>
+                <strong>Apellidos:</strong> {perfil.lastname}
+              </p>
+              <p>
+                <strong>Email:</strong> {perfil.email}
+              </p>
 
               {editing ? (
                 <>
-                  <label>Teléfono: <input name="telef" value={form.telef} onChange={handleChange} /></label>
-                  <label>Peso (kg): <input name="weight" value={form.weight} onChange={handleChange} type="number" /></label>
-                  <label>FTP (W): <input name="ftp" value={form.ftp} onChange={handleChange} type="number" /></label>
-                  <label>Fecha de nacimiento: <input name="birthdate" value={form.birthdate} onChange={handleChange} type="date" /></label>
-                  <label>FC máxima: <input name="max_heartrate" value={form.max_heartrate} onChange={handleChange} type="number" /></label>
+                  <label>
+                    Teléfono: <input name="telef" value={form.telef} onChange={handleChange} />
+                  </label>
+                  <label>
+                    Peso (kg):{' '}
+                    <input name="weight" value={form.weight} onChange={handleChange} type="number" />
+                  </label>
+                  <label>
+                    FTP (W): <input name="ftp" value={form.ftp} onChange={handleChange} type="number" />
+                  </label>
+                  <label>
+                    Fecha de nacimiento:{' '}
+                    <input name="birthdate" value={form.birthdate} onChange={handleChange} type="date" />
+                  </label>
+                  <label>
+                    FC máxima:{' '}
+                    <input
+                      name="max_heartrate"
+                      value={form.max_heartrate}
+                      onChange={handleChange}
+                      type="number"
+                    />
+                  </label>
                 </>
               ) : (
                 <>
-                  <p><strong>Teléfono:</strong> {perfil.telef}</p>
-                  <p><strong>Peso:</strong> {perfil.weight} kg</p>
-                  <p><strong>FTP:</strong> {perfil.ftp} W</p>
-                  <p><strong>Fecha de nacimiento:</strong> {perfil.birthdate?.slice(0, 10)}</p>
-                  <p><strong>FC máxima:</strong> {perfil.max_heartrate} ppm</p>
+                  <p>
+                    <strong>Teléfono:</strong> {perfil.telef}
+                  </p>
+                  <p>
+                    <strong>Peso:</strong> {perfil.weight} kg
+                  </p>
+                  <p>
+                    <strong>FTP:</strong> {perfil.ftp} W
+                  </p>
+                  <p>
+                    <strong>Fecha de nacimiento:</strong> {perfil.birthdate?.slice(0, 10)}
+                  </p>
+                  <p>
+                    <strong>FC máxima:</strong> {perfil.max_heartrate} ppm
+                  </p>
                 </>
               )}
             </div>
 
             {editing ? (
               <div className={styles.buttons}>
-                <button onClick={handleUpdate} className={`${styles.save} ${syne.className}`}>Guardar cambios</button>
-                <button onClick={() => setEditing(false)} className={`${styles.cancel} ${syne.className}`}>Cancelar</button>
+                <button onClick={handleUpdate} className={`${styles.save} ${syne.className}`}>
+                  Guardar cambios
+                </button>
+                <button onClick={() => setEditing(false)} className={`${styles.cancel} ${syne.className}`}>
+                  Cancelar
+                </button>
               </div>
             ) : (
-              <button onClick={() => setEditing(true)} className={`${styles.edit} ${syne.className}`}>Editar perfil</button>
+              <button onClick={() => setEditing(true)} className={`${styles.edit} ${syne.className}`}>
+                Editar perfil
+              </button>
             )}
 
-            <button onClick={handleLogout} className={`${styles.logout} ${syne.className}`}>Cerrar sesión</button>
+            <button onClick={handleLogout} className={`${styles.logout} ${syne.className}`}>
+              Cerrar sesión
+            </button>
           </>
         ) : (
           <p>No se pudieron cargar los datos del perfil.</p>

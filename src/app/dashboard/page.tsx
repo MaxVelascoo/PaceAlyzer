@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Syne } from 'next/font/google';
 import { useUser } from '@/context/userContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -152,6 +153,9 @@ function DashboardContent() {
                 ) : (
                   <div className={styles.emptyState}>
                     <p>No hay entreno planificado este día</p>
+                    <Link href="/chat" className={`${styles.chatButton} ${syne.className}`}>
+                      Hablar con Pazey
+                    </Link>
                   </div>
                 )}
               </div>
