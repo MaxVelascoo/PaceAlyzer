@@ -211,7 +211,7 @@
                     <Tooltip 
                       contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
                       labelFormatter={(val) => formatTime(Number(val))}
-                      formatter={(value: number) => [`${value} W`, 'Potencia']}
+                      formatter={(value: number | undefined) => [`${value ?? 0} W`, 'Potencia']}
                     />
                     <Area 
                       type="monotone" 
@@ -265,7 +265,7 @@
                     <Tooltip 
                       contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: '8px' }}
                       labelFormatter={(val) => formatTime(Number(val))}
-                      formatter={(value: number) => [`${value} ppm`, 'FC']}
+                      formatter={(value: number | undefined) => [`${value ?? 0} ppm`, 'FC']}
                     />
                     <Area 
                       type="monotone" 
