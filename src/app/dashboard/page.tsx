@@ -214,7 +214,7 @@ function DashboardContent() {
 
             <div className={`${styles.cardShell} ${styles.fullWidth}`}>
               <NutritionPanel 
-                nutrition={(plannedWorkout as any)?.nutrition ?? null} 
+                nutrition={plannedWorkout?.nutrition ?? null} 
                 loading={loadingPlanned}
               />
             </div>

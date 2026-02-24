@@ -109,13 +109,11 @@ function MiniCard({
   title,
   subtitle,
   accentClass,
-  icon,
   block,
 }: {
   title: string;
   subtitle?: string;
   accentClass: string; // pre/during/post
-  icon: React.ReactNode;
   block?: NutritionBlock;
 }) {
   const targets = block?.targets ?? [];
@@ -199,21 +197,18 @@ export default function NutritionPanel({
                 : undefined
             }
             accentClass={styles.nPre}
-            icon={<span>⏱️</span>}
             block={nutrition?.pre}
           />
 
           <MiniCard
             title="DURANTE"
             accentClass={styles.nDuring}
-            icon={<span>🍌</span>}
             block={nutrition?.during}
           />
 
           <MiniCard
             title="DESPUÉS"
             accentClass={styles.nPost}
-            icon={<span>🧃</span>}
             block={nutrition?.post}
           />
         </div>

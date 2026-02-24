@@ -4,6 +4,7 @@ import styles from '@/app/dashboard/dashboard.module.css';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import { Syne } from 'next/font/google';
+import type { NutritionData } from '@/components/NutritionPanel';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const spaceGrotesk = Space_Grotesk({
@@ -50,6 +51,7 @@ export type PlannedWorkout = {
     };
     steps: Step[];
   };
+  nutrition?: NutritionData | null;
   status: 'planned' | 'modified' | 'completed' | 'skipped';
   source: 'system' | 'user_modified' | 'template' | 'regenerated';
 };
