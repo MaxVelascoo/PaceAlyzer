@@ -9,7 +9,7 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import PlannedWorkoutCard from '@/components/PlannedWorkoutCard';
 import { usePlannedWorkout } from '@/hooks/usePlannedWorkout';
 import DoneWorkoutCard from '@/components/DoneWorkoutCard';
-
+import NutritionPanel from '@/components/NutritionPanel';
 
 import styles from './dashboard.module.css';
 
@@ -190,6 +190,14 @@ function DashboardContent() {
               </div>
             </section>
           </div>
+          {/* NUTRICIÓN (full-width debajo de las dos columnas) */}
+          <section className={styles.cardBlock}>
+            <h3 className={`${styles.cardHeading} ${syne.className}`}>NUTRICIÓN</h3>
+
+            <div className={`${styles.cardShell} ${styles.fullWidth}`}>
+              <NutritionPanel nutrition={(plannedWorkout as any)?.nutrition ?? null} />
+            </div>
+          </section>
         </div>
       </div>
     </div>

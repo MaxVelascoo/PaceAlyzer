@@ -69,6 +69,11 @@
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
+/* Tarjeta de nutrición sin min-height */
+.cardShell.fullWidth {
+  min-height: auto;
+}
+
 .cardShell:hover {
   transform: translateY(-4px);
   box-shadow: 0 18px 42px rgba(32, 18, 58, 0.12);
@@ -692,3 +697,198 @@
   box-shadow: 0 18px 28px rgba(140, 96, 255, 0.28);
 }
 
+
+/* NUTRICION CARD */
+/* Full width card debajo de las dos columnas */
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+/* Panel nutrición dentro del card */
+.nutritionPanel {
+  padding: 18px;
+}
+
+.nutritionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.nutritionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.nutritionEmoji {
+  font-size: 18px;
+}
+
+.nutritionEmpty {
+  padding: 18px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.03);
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* Grid de 3 mini cards */
+.nutritionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 0;
+}
+
+/* Mini card estilo mockup */
+.nMiniCard {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  margin-bottom: 0;
+}
+
+.nMiniHeader {
+  padding: 12px 12px 10px;
+  color: #111;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.nMiniTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.nMiniTitle {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+.nMiniSubtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.nMiniBody {
+  padding: 12px 12px 12px;
+}
+
+.nMiniEmpty {
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 14px;
+}
+
+/* Targets */
+.nTargets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nTargetTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nTargetLabel {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.65);
+  font-weight: 700;
+}
+
+.nTargetValue {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.70);
+}
+
+/* Progress bars */
+.nBarTrack {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.nBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.45);
+}
+
+.nBarRange {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.35);
+}
+
+/* Chips */
+.nChips {
+  margin-top: 10px;
+  margin-bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nChip {
+  padding: 8px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.nChipSoft {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Acentos por bloque: PRE / DURANTE / POST */
+.nPre .nMiniHeader {
+  background: linear-gradient(90deg, rgba(255, 154, 86, 0.45), rgba(255, 122, 24, 0.18));
+}
+.nDuring .nMiniHeader {
+  background: linear-gradient(90deg, rgba(255, 142, 199, 0.45), rgba(139, 92, 246, 0.16));
+}
+.nPost .nMiniHeader {
+  background: linear-gradient(90deg, rgba(167, 139, 250, 0.45), rgba(255, 165, 107, 0.12));
+}
+
+/* Colores de barra por bloque */
+.nPre .nBarFill,
+.nPre .nBarRange {
+  background: linear-gradient(90deg, rgba(255, 154, 86, 0.95), rgba(255, 122, 24, 0.85));
+}
+
+.nDuring .nBarFill,
+.nDuring .nBarRange {
+  background: linear-gradient(90deg, rgba(255, 142, 199, 0.95), rgba(139, 92, 246, 0.85));
+}
+
+.nPost .nBarFill,
+.nPost .nBarRange {
+  background: linear-gradient(90deg, rgba(167, 139, 250, 0.95), rgba(255, 165, 107, 0.85));
+}
+
+/* Responsivo (si reduces ventana) */
+@media (max-width: 1100px) {
+  .nutritionGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -20,7 +20,7 @@ export function usePlannedWorkout(userId: string | undefined, dateKey: string | 
 
       const { data, error } = await supabase
         .from('planned_workouts')
-        .select('id,user_id,date,title,description,planned_duration_s,planned_distance_m,structure,status,source,created_at,updated_at')
+        .select('id,user_id,date,title,description,planned_duration_s,planned_distance_m,structure,status,source,created_at,updated_at,nutrition')
         .eq('user_id', userId)
         .eq('date', dateKey)
         .maybeSingle();
