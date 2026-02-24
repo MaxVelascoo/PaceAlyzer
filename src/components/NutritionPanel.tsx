@@ -1,7 +1,10 @@
 'use client';
 
 import React from 'react';
+import { Syne } from 'next/font/google';
 import styles from '@/app/dashboard/dashboard.module.css';
+
+const syne = Syne({ subsets: ['latin'], weight: ['700', '800'] });
 
 type NutritionTarget = {
   key: string;
@@ -123,7 +126,7 @@ function MiniCard({
     <article className={`${styles.nMiniCard} ${accentClass}`}>
       <div className={styles.nMiniHeader}>
         <div className={styles.nMiniTitleRow}>
-          <div className={styles.nMiniTitle}>{title}</div>
+          <div className={`${styles.nMiniTitle} ${syne.className}`}>{title}</div>
         </div>
         {subtitle ? <div className={styles.nMiniSubtitle}>{subtitle}</div> : null}
       </div>
@@ -160,9 +163,21 @@ function MiniCard({
 
 export default function NutritionPanel({
   nutrition,
+  loading,
 }: {
   nutrition?: NutritionData | null;
+  loading?: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className={styles.nutritionPanel}>
+        <div className={styles.nutritionEmpty}>
+          Cargando…
+        </div>
+      </div>
+    );
+  }
+
   const hasData =
     nutrition?.pre?.targets?.length ||
     nutrition?.during?.targets?.length ||
@@ -172,7 +187,7 @@ export default function NutritionPanel({
     <div className={styles.nutritionPanel}>
       {!hasData ? (
         <div className={styles.nutritionEmpty}>
-          No hay nutrición definida para este entreno.
+          No hay nutrición definida para este entreno
         </div>
       ) : (
         <div className={styles.nutritionGrid}>

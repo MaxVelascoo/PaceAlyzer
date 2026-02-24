@@ -20,12 +20,30 @@ function DashboardContent() {
   const hoy = new Date();
   const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
 
-  const [semanaOffset, setSemanaOffset] = useState(0);
-  const [diaSeleccionado, setDiaSeleccionado] = useState(hoyDia);
+  const [semanaOffset, setSemanaOffset] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dashboardSemanaOffset');
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
+  });
+
+  const [diaSeleccionado, setDiaSeleccionado] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('dashboardDiaSeleccionado');
+      return saved ? parseInt(saved, 10) : hoyDia;
+    }
+    return hoyDia;
+  });
+
+  // Guardar en localStorage cuando cambien
+  useEffect(() => {
+    localStorage.setItem('dashboardSemanaOffset', semanaOffset.toString());
+  }, [semanaOffset]);
 
   useEffect(() => {
-    setDiaSeleccionado(semanaOffset === 0 ? hoyDia : 0);
-  }, [semanaOffset, hoyDia]);
+    localStorage.setItem('dashboardDiaSeleccionado', diaSeleccionado.toString());
+  }, [diaSeleccionado]);
 
   const user = useUser()?.user;
 
@@ -195,7 +213,10 @@ function DashboardContent() {
             <h3 className={`${styles.cardHeading} ${syne.className}`}>NUTRICIÓN</h3>
 
             <div className={`${styles.cardShell} ${styles.fullWidth}`}>
-              <NutritionPanel nutrition={(plannedWorkout as any)?.nutrition ?? null} />
+              <NutritionPanel 
+                nutrition={(plannedWorkout as any)?.nutrition ?? null} 
+                loading={loadingPlanned}
+              />
             </div>
           </section>
         </div>
