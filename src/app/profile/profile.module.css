@@ -153,3 +153,52 @@ width: 100%;
   90% { opacity: 1; transform: translateX(-50%) translateY(0); }
   100% { opacity: 0; transform: translateX(-50%) translateY(20px); }
 }
+
+/* Importación histórica */
+.importSection {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(15,15,20,0.08);
+}
+
+.importTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f0f14;
+  margin: 0 0 8px;
+}
+
+.importDesc {
+  font-size: 0.875rem;
+  color: rgba(15,15,20,0.55);
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.importBtn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  background: #14130f;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.importBtn:hover:not(:disabled) {
+  background: #623232;
+  transform: translateY(-1px);
+}
+
+.importBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.importResult {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  color: rgba(15,15,20,0.65);
+}

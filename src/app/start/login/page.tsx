@@ -20,20 +20,28 @@ export default function LoginPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
+    console.log('Intentando login con:', form.email);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
     });
 
-    if (error) return toast('Error al iniciar sesión: ' + error.message,'error');
+    console.log('Respuesta de Supabase:', { data, error });
+
+    if (error) {
+      console.error('Error de login:', error);
+      return toast('Error al iniciar sesión: ' + error.message,'error');
+    }
 
     // Forzar recarga del usuario
     const sessionRes = await supabase.auth.getUser();
     if (sessionRes.error || !sessionRes.data?.user) {
+      console.error('Error obteniendo usuario:', sessionRes.error);
       return toast('No se pudo obtener el usuario','error');
     }
 
-    // Esto actualizará el contexto automáticamente si el contexto está bien configurado
+    console.log('Login exitoso, redirigiendo...');
     toast('Inicio de sesión correcto')
     router.push('/dashboard');
   };

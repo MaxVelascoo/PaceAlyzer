@@ -24,21 +24,34 @@ export default function ChatThread({
   messages,
   onAction,
   userAvatarUrl,
+  isThinking,
 }: {
   messages: ChatMessage[];
   onAction: (actionId: string) => void;
   userAvatarUrl?: string | null;
+  isThinking?: boolean;
 }) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const prevMessageCountRef = useRef(messages.length);
 
+  const scrollToBottom = () => {
+    if (messagesRef.current) {
+      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    }
+  };
+
   useEffect(() => {
-    // Solo hacer scroll si se añadieron nuevos mensajes, no en la carga inicial
     if (messages.length > prevMessageCountRef.current) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      scrollToBottom();
     }
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);
+
+  useEffect(() => {
+    if (isThinking) {
+      scrollToBottom();
+    }
+  }, [isThinking]);
 
   return (
     <div className={styles.thread}>
@@ -55,7 +68,7 @@ export default function ChatThread({
         <div className={styles.threadTitle}>Pazey</div>
       </div>
 
-      <div className={styles.messages}>
+      <div className={styles.messages} ref={messagesRef}>
         {messages.map((m) => (
           <div key={m.id} className={m.role === 'user' ? styles.msgRowRight : styles.msgRowLeft}>
             {m.role === 'assistant' && (
@@ -133,7 +146,19 @@ export default function ChatThread({
             )}
           </div>
         ))}
-        <div ref={bottomRef} />
+        {isThinking && (
+          <div className={styles.msgRowLeft}>
+            <div className={styles.avatar} aria-hidden>
+              <Image src="/pazey-logo.png" alt="" width={38} height={38} className={styles.avatarLogo} />
+            </div>
+            <div className={styles.typingBubble}>
+              <div className={styles.typingDot} />
+              <div className={styles.typingDot} />
+              <div className={styles.typingDot} />
+            </div>
+          </div>
+        )}
+        <div style={{ display: 'none' }} />
       </div>
     </div>
   );

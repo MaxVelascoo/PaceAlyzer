@@ -59,13 +59,13 @@
 /* Tarjetas más altas */
 .cardShell {
   width: 100%;
-  min-height: 520px;             /* ← un poco más largas */
+  min-height: 600px;             /* ← aumentado para que quepa todo */
   border-radius: 20px;
   background: #ffffff;
   border: 1px solid #ececf3;
   box-shadow: 0 14px 32px rgba(32, 18, 58, 0.06);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
@@ -115,6 +115,7 @@
   flex-direction: column;
   gap: 16px;
   text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .doneNewHeader{
@@ -373,65 +374,50 @@
 }
 
 .weekHeaderRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 160px 1fr 160px;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
   margin-bottom: 10px;
 }
 
 /* WeekHeader usa clase global .week-header */
 .weekHeaderRow :global(.week-header) {
-  flex: 1;
-  max-width: 900px;
+  grid-column: 2;
+  justify-self: center;
+  width: 100%;
 }
 
-/* refresh button */
-.refreshButton {
-  width: 56px;
-  height: 56px;
-  aspect-ratio: 1 / 1;
-  min-width: 56px;
-  min-height: 56px;
-  border-radius: 50%;
-  flex: 0 0 56px;
-  padding: 0;
-  
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.weekHeaderRow .stravaSync {
+  grid-column: 3;
+  justify-self: start;
+  margin-left: 16px;
+}
 
-  box-sizing: border-box;
-  line-height: 0;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.25);
+/* Strava sync button */
+.stravaSync {
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  transition: background 0.15s ease, transform 0.15s ease;
+  white-space: pre-line;
+  text-align: center;
+  line-height: 1.3;
 }
 
-.refreshButton:hover:not(:disabled) {
+.stravaSync:hover:not(:disabled) {
+  background: #7476e9;
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.35);
 }
 
-.refreshButton:disabled {
+.stravaSync:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-.refreshIcon {
-  width: 36px;
-  height: 36px;
-  display: block;
-  object-fit: contain;
-}
-
-.spin {
-  animation: spin 900ms linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 .syncError {
@@ -450,12 +436,12 @@
    ========================= */
 
 .plannedInner{
-  height: 100%;
+  min-height: 100%;
   padding: 26px 26px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font-family: inherit; /* el Syne te lo aporta el layout */
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
   text-align: left;     /* <-- clave: nada centrado */
 }
 
@@ -512,9 +498,49 @@
 }
 
 .zoneSeg{
-  border-radius: 14px;
+  border-radius: 6px;
   box-shadow: 0 10px 18px rgba(15,15,20,0.08);
   min-width: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.zoneSeg:hover {
+  opacity: 0.85;
+}
+
+/* Tooltip de zona */
+.zoneTooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.zoneTooltipContent {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.zoneTooltipContent::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid #fff;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.1));
 }
 
 /* Colores por zona (puedes ajustarlos a tu paleta) */
@@ -525,6 +551,11 @@
 .zone_Z5{ background: rgba(255, 175, 95, 0.92); }
 .zone_Z6{ background: rgba(255, 120, 140, 0.94); }
 .zone_Z7{ background: rgba(255, 80, 115, 0.96); }
+
+/* Helvetica override */
+.helvetica {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+}
 
 /* Steps */
 .stepsSection{
@@ -707,6 +738,7 @@
 /* Panel nutrición dentro del card */
 .nutritionPanel {
   padding: 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .nutritionHeader {

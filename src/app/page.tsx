@@ -89,8 +89,8 @@ const HomePage: React.FC = () => {
             </h1>
 
             <p className={`subtitle ${inter.className}`}>
-              Bienvenido a PaceAlyzer, tu entrenador virtual inteligente para ciclistas.
-              Maximiza tu rendimiento con informes personalizados impulsados por IA.
+              Planificación estructurada basada en entrenamientos reales, con nutrición integrada y análisis inteligente.
+              Tecnología aplicada al rendimiento ciclista.
             </p>
 
             <button className={`start-button ${syne.className}`} onClick={handleCTA}>
@@ -106,7 +106,7 @@ const HomePage: React.FC = () => {
                 {/* Descomenta esto y pon tu imagen: */}
                 { 
                 <Image
-                  src="/mockup-dashboard.png"
+                  src="/mockup-dashboard3.png"
                   alt="PaceAlyzer Dashboard"
                   width={1200}
                   height={800}

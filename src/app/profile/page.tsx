@@ -33,6 +33,8 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     telef: '',
@@ -204,6 +206,35 @@ export default function PerfilPage() {
     router.replace('/');
   };
 
+  const handleFullImport = async () => {
+    if (!user || importing) return;
+    const confirmed = window.confirm(
+      'Esto importará todo tu historial de Strava. Puede tardar unos segundos. ¿Continuar?'
+    );
+    if (!confirmed) return;
+
+    setImporting(true);
+    setImportResult(null);
+
+    try {
+      // Sin startDate/endDate → el sync usa toda la historia disponible
+      const res = await fetch('/api/strava/sync-trainings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, lookbackDays: 3650, fullImport: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error ?? 'Error importando');
+      setImportResult(`✓ ${json.insertedOrUpdated} actividades importadas correctamente`);
+      toast('Historial importado correctamente');
+    } catch (e) {
+      setImportResult(`Error: ${(e as Error).message}`);
+      toast('Error al importar el historial', 'error');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className={`${styles.container} ${spaceGrotesk.className}`}>
@@ -302,6 +333,25 @@ export default function PerfilPage() {
             <button onClick={handleLogout} className={`${styles.logout} ${syne.className}`}>
               Cerrar sesión
             </button>
+
+            {/* Sección importación histórica */}
+            <div className={styles.importSection}>
+              <h3 className={`${styles.importTitle} ${syne.className}`}>Datos e historial</h3>
+              <p className={styles.importDesc}>
+                Importa todo tu historial de Strava para obtener métricas precisas de CTL, ATL y TSB.
+                Esta operación solo necesitas hacerla una vez.
+              </p>
+              <button
+                onClick={handleFullImport}
+                disabled={importing}
+                className={`${styles.importBtn} ${syne.className}`}
+              >
+                {importing ? 'Importando historial…' : 'Importar historial completo de Strava'}
+              </button>
+              {importResult && (
+                <p className={styles.importResult}>{importResult}</p>
+              )}
+            </div>
           </>
         ) : (
           <p>No se pudieron cargar los datos del perfil.</p>

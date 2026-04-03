@@ -43,6 +43,9 @@ export default function Header() {
                 <Link href="/dashboard" className={`nav-link dashboard-link ${syne.className}`}>
                   Dashboard
                 </Link>
+                <Link href="/trendings" className={`nav-link ${syne.className}`}>
+                  Trendings
+                </Link>
                 <Link href="/profile" className={`nav-link ${syne.className}`}>
                   Perfil
                 </Link>
@@ -59,9 +62,6 @@ export default function Header() {
             )}
             <Link href="/" className={`nav-link ${syne.className}`}>
               Inicio
-            </Link>
-            <Link href="/#acerca-del-producto" className={`nav-link ${syne.className}`}>
-              Acerca del producto
             </Link>
           </nav>
         </div>

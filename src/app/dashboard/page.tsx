@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Syne } from 'next/font/google';
 import { useUser } from '@/context/userContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -19,6 +20,7 @@ const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', '
 function DashboardContent() {
   const hoy = new Date();
   const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+  const searchParams = useSearchParams();
 
   const [semanaOffset, setSemanaOffset] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -29,6 +31,13 @@ function DashboardContent() {
   });
 
   const [diaSeleccionado, setDiaSeleccionado] = useState(() => {
+    // Si viene ?date=YYYY-MM-DD desde el chat, calcular el índice del día
+    const dateParam = searchParams?.get('date');
+    if (dateParam) {
+      const d = new Date(dateParam + 'T00:00:00');
+      const weekday = d.getDay() === 0 ? 6 : d.getDay() - 1;
+      return weekday;
+    }
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('dashboardDiaSeleccionado');
       return saved ? parseInt(saved, 10) : hoyDia;
@@ -48,7 +57,7 @@ function DashboardContent() {
   const user = useUser()?.user;
 
   // ✅ hook "limpio" (trainingsByDate)
-  const { hasStrava, loading, trainingsByDate, startOfWeek, refetch } = useDashboardData(user?.id, semanaOffset);
+  const { hasStrava, loading, trainingsByDate, startOfWeek, refetch, userFtp } = useDashboardData(user?.id, semanaOffset);
 
   const mes = startOfWeek.toLocaleString('es-ES', { month: 'long' });
 
@@ -137,17 +146,13 @@ function DashboardContent() {
 
           <button
             type="button"
-            className={styles.refreshButton}
+            className={styles.stravaSync}
             onClick={handleSync}
             disabled={syncing || !user?.id || hasStrava === false}
             title={hasStrava === false ? 'Conecta Strava para sincronizar' : 'Sincronizar entrenos'}
             aria-label="Sincronizar entrenos"
           >
-            <img
-              src="/refresh-icon.png"
-              alt=""
-              className={syncing ? `${styles.refreshIcon} ${styles.spin}` : styles.refreshIcon}
-            />
+            {syncing ? 'Sincronizando…' : 'Sincronizar\nentrenos'}
           </button>
         </div>
 
@@ -165,9 +170,7 @@ function DashboardContent() {
                 ) : loadingPlanned ? (
                   <div className={styles.emptyState}><p>Cargando…</p></div>
                 ) : plannedWorkout ? (
-                  <div className={syne.className}>
-                    <PlannedWorkoutCard workout={plannedWorkout} />
-                  </div>
+                  <PlannedWorkoutCard workout={plannedWorkout} />
                 ) : (
                   <div className={styles.emptyState}>
                     <p>No hay entreno planificado este día</p>
@@ -197,9 +200,7 @@ function DashboardContent() {
                     <p>Conecta Strava para ver tus entrenos</p>
                   </div>
                 ) : entreno ? (
-                  <div className={syne.className}>
-                    <DoneWorkoutCard training={entreno} className={syne.className} />
-                  </div>
+                  <DoneWorkoutCard training={entreno} ftp={userFtp} />
                 ) : (
                   <div className={styles.emptyState}>
                     <p>No hay entreno registrado este día</p>

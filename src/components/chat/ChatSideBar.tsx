@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import styles from '@/app/chat/chat.module.css';
 import { PlannedWorkout } from '@/components/PlannedWorkoutCard';
 
@@ -51,7 +52,11 @@ export default function ChatSidebar({
         {loading ? (
           <div className={styles.summaryLoading}>Cargando...</div>
         ) : plannedWorkout ? (
-          <div className={styles.summaryCard}>
+          <Link
+            href={`/dashboard?date=${selectedDate}`}
+            className={styles.summaryCard}
+            title="Ver en el dashboard"
+          >
             <div className={styles.summaryTitle}>{plannedWorkout.title}</div>
             <div className={styles.summaryDuration}>
               {Math.floor(plannedWorkout.planned_duration_s / 60)} min
@@ -59,7 +64,8 @@ export default function ChatSidebar({
             {plannedWorkout.description && (
               <div className={styles.summaryDescription}>{plannedWorkout.description}</div>
             )}
-          </div>
+            <div className={styles.summaryLink}>Ver en dashboard →</div>
+          </Link>
         ) : (
           <div className={styles.summaryEmpty}>No hay entreno planificado</div>
         )}

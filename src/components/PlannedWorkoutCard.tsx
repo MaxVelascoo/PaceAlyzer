@@ -1,5 +1,6 @@
 'use client';
 import React, { useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import styles from '@/app/dashboard/dashboard.module.css';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
@@ -149,6 +150,13 @@ function renderStep(step: Step, level: number): React.ReactNode {
 }
 
 export default function PlannedWorkoutCard({ workout }: { workout: PlannedWorkout }) {
+  const [hoveredZone, setHoveredZone] = React.useState<{ zone: Zone; x: number; y: number } | null>(null);
+  const [mounted, setMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   const steps = useMemo(() => workout?.structure?.steps ?? [], [workout?.structure?.steps]);
   const flat = useMemo(() => flattenSteps(steps), [steps]);
   const total = useMemo(() => flat.reduce((acc, it) => acc + (it.duration_s || 0), 0), [flat]);
@@ -160,6 +168,7 @@ export default function PlannedWorkoutCard({ workout }: { workout: PlannedWorkou
       zone: it.zone,
       widthPct: (it.duration_s / denom) * 100,
       heightPx: zoneHeightPx(it.zone),
+      duration_s: it.duration_s,
     }));
   }, [flat, total]);
 
@@ -188,11 +197,44 @@ export default function PlannedWorkoutCard({ workout }: { workout: PlannedWorkou
                 width: `${seg.widthPct}%`,
                 height: `${seg.heightPx}px`,
               }}
-              title={seg.zone}
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredZone({
+                  zone: seg.zone,
+                  x: rect.left + rect.width / 2,
+                  y: rect.top - 10,
+                });
+              }}
+              onMouseLeave={() => setHoveredZone(null)}
             />
           ))}
         </div>
       </section>
+      
+      {/* Tooltip usando portal */}
+      {mounted && hoveredZone && createPortal(
+        <div
+          className={styles.zoneTooltip}
+          style={{
+            position: 'fixed',
+            left: `${hoveredZone.x}px`,
+            top: `${hoveredZone.y}px`,
+            transform: 'translate(-50%, calc(-100% - 8px))',
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}
+        >
+          <div className={styles.zoneTooltipContent}>
+            <div style={{ marginBottom: '4px', fontSize: '12px', color: '#999' }}>
+              Zona de intensidad
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: '600', color: '#333' }}>
+              {hoveredZone.zone}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* ✅ Steps: SOLO top-level numerado */}
       <section className={styles.stepsSection}>
@@ -208,13 +250,13 @@ export default function PlannedWorkoutCard({ workout }: { workout: PlannedWorkou
       {/* Footer */}
       <footer className={styles.plannedFooter}>
         <span className={styles.totalLabel}>Duración total</span>
-        <span className={`${styles.totalValue} ${spaceGrotesk.className}`}>{formatStepDuration(total)}</span>
+        <span className={styles.totalValue}>{formatStepDuration(total)}</span>
       </footer>
 
       {/* Chat CTA */}
       <div className={styles.chatCTA}>
         <p className={styles.chatCTAText}>¿Quieres modificar este entreno?</p>
-        <Link href="/chat" className={`${styles.chatButton} ${syne.className}`}>
+        <Link href="/chat" className={styles.chatButton}>
             Hablar con Pazey
         </Link>
       </div>

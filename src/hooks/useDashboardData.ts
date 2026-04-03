@@ -14,6 +14,7 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
   const [loading, setLoading] = useState(true);
   const [trainingsByDate, setTrainingsByDate] = useState<Record<string, Training[]>>({});
   const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const [userFtp, setUserFtp] = useState<number | null>(null);
 
   const { startOfWeek, endOfWeek } = useMemo(() => {
     const hoy = new Date();
@@ -70,6 +71,16 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
 
         console.log('[useDashboardData] ✅ Strava account:', stravaAccount);
         setHasStrava(!!stravaAccount?.strava_id);
+
+        // 1b) FTP del usuario
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('ftp')
+          .eq('id', userId)
+          .maybeSingle();
+        if (!cancelled && userProfile?.ftp) {
+          setUserFtp(userProfile.ftp);
+        }
 
         // 2) Trainings (solo columnas necesarias)
         const { data: trainings, error: trainingsError } = await supabase
@@ -134,5 +145,6 @@ export function useDashboardData(userId: string |undefined, semanaOffset: number
     trainingsByDate,
     startOfWeek,
     refetch,
+    userFtp,
   };
 }

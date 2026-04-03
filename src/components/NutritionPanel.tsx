@@ -124,7 +124,7 @@ function MiniCard({
     <article className={`${styles.nMiniCard} ${accentClass}`}>
       <div className={styles.nMiniHeader}>
         <div className={styles.nMiniTitleRow}>
-          <div className={`${styles.nMiniTitle} ${syne.className}`}>{title}</div>
+          <div className={styles.nMiniTitle}>{title}</div>
         </div>
         {subtitle ? <div className={styles.nMiniSubtitle}>{subtitle}</div> : null}
       </div>

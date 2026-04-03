@@ -3,8 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // 🔥 solo en server
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+function calculateTSS(
+  duration_sec: number | null,
+  np: number | null,
+  ftp: number | null,
+): number | null {
+  if (!duration_sec || !np || !ftp || ftp === 0) return null;
+  const IF = np / ftp;
+  return Math.round((duration_sec * np * IF) / (ftp * 3600) * 100);
+}
 
 async function refreshStravaToken(refreshToken: string) {
   const res = await fetch('https://www.strava.com/oauth/token', {
@@ -62,9 +72,10 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const userId = body.userId as string | undefined;
-    const startDate = body.startDate as string | undefined; // YYYY-MM-DD
-    const endDate = body.endDate as string | undefined; // YYYY-MM-DD
+    const startDate = body.startDate as string | undefined;
+    const endDate = body.endDate as string | undefined;
     const lookbackDays = Number(body.lookbackDays ?? 30);
+    const fullImport = body.fullImport === true; // fuerza usar lookbackDays ignorando la última fecha en DB
 
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
@@ -89,24 +100,29 @@ export async function POST(req: Request) {
       afterEpoch = Math.floor(start.getTime() / 1000);
     } else {
       // Fallback: usar última fecha guardada o lookbackDays
-      const { data: lastRow, error: lastErr } = await supabaseAdmin
-        .from('trainings')
-        .select('date')
-        .eq('user_id', userId)
-        .order('date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (lastErr) throw lastErr;
-
+      // Si fullImport=true, ignorar la última fecha y usar lookbackDays directamente
       const now = new Date();
       const fallback = new Date(now);
       fallback.setDate(now.getDate() - Number(lookbackDays));
 
-      const sinceDate = lastRow?.date ? new Date(lastRow.date) : fallback;
-      sinceDate.setDate(sinceDate.getDate() - 1); // margen -1 día
+      if (!fullImport) {
+        const { data: lastRow, error: lastErr } = await supabaseAdmin
+          .from('trainings')
+          .select('date')
+          .eq('user_id', userId)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      afterEpoch = Math.floor(sinceDate.getTime() / 1000);
+        if (lastErr) throw lastErr;
+
+        const sinceDate = lastRow?.date ? new Date(lastRow.date) : fallback;
+        sinceDate.setDate(sinceDate.getDate() - 1);
+        afterEpoch = Math.floor(sinceDate.getTime() / 1000);
+      } else {
+        // Importación completa: usar lookbackDays sin mirar la DB
+        afterEpoch = Math.floor(fallback.getTime() / 1000);
+      }
     }
 
     // 3) asegurar token válido (refresh si expira)
@@ -144,6 +160,14 @@ export async function POST(req: Request) {
       });
     }
 
+    // 5b) obtener FTP del usuario para calcular TSS
+    const { data: userProfile } = await supabaseAdmin
+      .from('users')
+      .select('ftp')
+      .eq('id', userId)
+      .maybeSingle();
+    const ftp = userProfile?.ftp ?? null;
+
     // 6) obtener streams (watts y heartrate) para cada actividad
     const rowsPromises = cycling.map(async (a) => {
       let powerStream = null;
@@ -173,14 +197,19 @@ export async function POST(req: Request) {
         activity_id: Number(a.id),
         name: String(a.name ?? 'Entreno'),
         type: String(a.type),
-        date: String(a.start_date_local ?? a.start_date).slice(0, 10), // YYYY-MM-DD
-        distance: Number(a.distance), // metros
-        duration: Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)), // segundos
+        date: String(a.start_date_local ?? a.start_date).slice(0, 10),
+        distance: Number(a.distance),
+        duration: Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)),
         avgheartrate: a.average_heartrate ? Number(a.average_heartrate) : null,
         weighted_average_watts: a.weighted_average_watts ? Number(a.weighted_average_watts) : null,
         altitude: a.total_elevation_gain ? Number(a.total_elevation_gain) : null,
         power_stream: powerStream,
         hr_stream: hrStream,
+        TSS: calculateTSS(
+          Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)),
+          a.weighted_average_watts ? Number(a.weighted_average_watts) : null,
+          ftp,
+        ),
       };
     });
 
@@ -192,6 +221,11 @@ export async function POST(req: Request) {
       .upsert(rows, { onConflict: 'activity_id' });
 
     if (upErr) throw upErr;
+
+    // Disparar recálculo de métricas en el backend (fire & forget)
+    const backendUrl = process.env.BACKEND_URL ?? 'http://localhost:8000';
+    fetch(`${backendUrl}/api/metrics/recalculate?user_id=${userId}`, { method: 'POST' })
+      .catch(() => {});
 
     return NextResponse.json({
       insertedOrUpdated: rows.length,

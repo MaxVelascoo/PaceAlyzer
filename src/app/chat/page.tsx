@@ -65,83 +65,84 @@ export default function ChatPage() {
     fetchUserAvatar();
   }, [user]);
 
-  const weekDays: WeekDay[] = useMemo(
-    () => [
-      { key: 'L', label: 'L', date: '2026-02-16' },
-      { key: 'M', label: 'M', date: '2026-02-17' },
-      { key: 'X', label: 'X', date: '2026-02-18' },
-      { key: 'J', label: 'J', date: '2026-02-19' },
-      { key: 'V', label: 'V', date: '2026-02-20' },
-    ],
-    []
-  );
+  const weekDays: WeekDay[] = useMemo(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=dom, 1=lun...
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'u1',
-      role: 'user',
-      content: '¿Me puedes mover el entreno del jueves al viernes?',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 'a1',
-      role: 'assistant',
-      content:
-        'Claro! He movido el entrenamiento planificado del jueves al viernes. Así tendrás más tiempo para recuperarte.',
-      createdAt: new Date().toISOString(),
-      actionCard: {
-        title: 'Viernes 26 abril',
-        workoutTitle: 'Fuerza + Sprints Neuromusculares',
-        zone: 'Zona 2',
-        duration: '44m',
-        bullets: [
-          { label: 'Calentamiento', detail: '20 min' },
-          { label: 'Sprint', detail: '10s', sub: 'Repeat explosividad' },
-          { label: 'Recuperación', detail: '2 min', sub: 'Zona 2' },
-          { label: 'Tempo Final', detail: '15 min', sub: 'Zona 3' },
-        ],
-        actions: [
-          { id: 'apply_1', label: 'Aplicar cambios', variant: 'primary' },
-          { id: 'undo_1', label: 'Deshacer', variant: 'ghost' },
-        ],
-      },
-    },
-    {
-      id: 'u2',
-      role: 'user',
-      content: 'Vale, ¡aplica los cambios!',
-      createdAt: new Date().toISOString(),
-    },
-  ]);
+    const labels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    return labels.map((label, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return { key: label, label, date };
+    });
+  }, []);
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
+
+  // Cargar historial de la sesión activa al montar
+  useEffect(() => {
+    if (!user?.id) return;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000';
+    fetch(`${backendUrl}/api/chat/history?user_id=${user.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.messages?.length) {
+          setMessages(data.messages.map((m: { role: string; content: string; created_at: string }) => ({
+            id: `hist_${crypto.randomUUID()}`,
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            createdAt: m.created_at,
+          })));
+        }
+      })
+      .catch(() => {}); // silencioso si falla
+  }, [user?.id]);
 
   const handleSend = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || !user?.id) return;
 
     setMessages((prev) => [
       ...prev,
       { id: `u_${crypto.randomUUID()}`, role: 'user', content: trimmed, createdAt: new Date().toISOString() },
-      {
-        id: `a_${crypto.randomUUID()}`,
-        role: 'assistant',
-        content: 'Perfecto. Tengo la propuesta lista para aplicar. ¿Confirmas?',
-        createdAt: new Date().toISOString(),
-        actionCard: {
-          title: 'Cambios propuestos',
-          workoutTitle: 'Mover sesión J → V',
-          zone: 'Impacto: bajo',
-          duration: '—',
-          bullets: [
-            { label: 'Jueves', detail: 'Descanso / Z1-Z2', sub: 'Recuperación activa' },
-            { label: 'Viernes', detail: 'Fuerza + Sprints', sub: 'Mantiene calidad' },
-          ],
-          actions: [
-            { id: 'apply_2', label: 'Aplicar cambios', variant: 'primary' },
-            { id: 'undo_2', label: 'Deshacer', variant: 'ghost' },
-          ],
-        },
-      },
     ]);
+
+    setIsThinking(true);
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:8000';
+
+    try {
+      const res = await fetch(`${backendUrl}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          message: trimmed,
+          date: selectedDate,
+        }),
+      });
+
+      const data = await res.json();
+      const reply: string = res.ok
+        ? data.reply
+        : `Error del servidor: ${data.detail ?? res.statusText}`;
+
+      setMessages((prev) => [
+        ...prev,
+        { id: `a_${crypto.randomUUID()}`, role: 'assistant', content: reply, createdAt: new Date().toISOString() },
+      ]);
+    } catch (err) {
+      console.error('Backend connection error:', err);
+      setMessages((prev) => [
+        ...prev,
+        { id: `a_${crypto.randomUUID()}`, role: 'assistant', content: 'No pude conectar con el servidor.', createdAt: new Date().toISOString() },
+      ]);
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   const handleAction = async (actionId: string) => {
@@ -184,7 +185,7 @@ export default function ChatPage() {
           />
 
           <div className={styles.threadCol}>
-            <ChatThread messages={messages} onAction={handleAction} userAvatarUrl={userAvatarUrl} />
+            <ChatThread messages={messages} onAction={handleAction} userAvatarUrl={userAvatarUrl} isThinking={isThinking} />
             <MessageComposer onSend={handleSend} placeholder="Escribe tu petición…" />
           </div>
         </div>

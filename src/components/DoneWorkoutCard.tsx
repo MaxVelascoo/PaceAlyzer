@@ -1,13 +1,7 @@
     'use client';
     import React from 'react';
     import styles from '@/app/dashboard/dashboard.module.css';
-    import { Space_Grotesk } from 'next/font/google';
     import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-    const spaceGrotesk = Space_Grotesk({
-        subsets: ['latin'],
-        weight: ['500','600','700'], // recomendable para números
-    });
 
     // Función para formatear tiempo en formato hh:mm:ss o mm:ss
     function formatTime(seconds: number): string {
@@ -19,6 +13,17 @@
             return `${h}h${m}min`;
         }
         return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Suaviza un stream a medias de windowSec segundos
+    function smoothStream(stream: number[], windowSec = 10): { time: number; watts: number }[] {
+        const result: { time: number; watts: number }[] = [];
+        for (let i = 0; i < stream.length; i += windowSec) {
+            const slice = stream.slice(i, i + windowSec);
+            const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+            result.push({ time: i, watts: Math.round(avg) });
+        }
+        return result;
     }
 
     // Función para calcular ticks del eje X basado en duración
@@ -55,15 +60,29 @@
     export type DoneTraining = {
     activity_id: number;
     name?: string | null;
-
-    duration?: number | null; // segundos
-    distance?: number | null; // metros
-    weighted_average_watts?: number | null; // Pot. Norm
-    avgheartrate?: number | null; // FC media
-    altitude?: number | null; // altitud ganada
+    duration?: number | null;
+    distance?: number | null;
+    weighted_average_watts?: number | null;
+    avgheartrate?: number | null;
+    altitude?: number | null;
     power_stream?: number[] | null;
     hr_stream?: number[] | null;
     };
+
+    function calculateTSS(
+      duration_sec: number | null | undefined,
+      np: number | null | undefined,
+      ftp: number | null | undefined,
+    ): number | null {
+      if (!duration_sec || !np || !ftp || ftp === 0) return null;
+      const IF = np / ftp;
+      return Math.round((duration_sec * np * IF) / (ftp * 3600) * 100);
+    }
+
+    function formatTSS(tss: number | null): string {
+      if (tss == null) return '—';
+      return String(tss);
+    }
 
     function formatDuration(totalSec: number | null | undefined) {
     if (totalSec == null) return '—';
@@ -110,9 +129,11 @@
     export default function DoneWorkoutCard({
     training,
     className,
+    ftp,
     }: {
     training: DoneTraining;
-    className?: string; // para aplicar Syne desde fuera
+    className?: string;
+    ftp?: number | null;
     }) {
     const statCards: StatCard[] = [
         {
@@ -167,7 +188,7 @@
             <div key={c.label} className={`${styles.statCard} ${styles[`tone_${c.tone}`]}`}>
                 <div className={styles.statTop}>
                 {c.icon}
-                <div className={`${styles.statValue} ${spaceGrotesk.className}`}>
+                <div className={styles.statValue}>
                     {c.value}
                 </div>
                 </div>
@@ -181,14 +202,14 @@
             <div className={styles.chartHeader}>
             <h5 className={styles.chartTitle}>Potencia</h5>
             <span className={styles.chartMeta}>
-                Pot. Norm. <strong className={spaceGrotesk.className}>{formatWatts(training.weighted_average_watts)}</strong>
+                Pot. Norm. <strong>{formatWatts(training.weighted_average_watts)}</strong>
             </span>
             </div>
 
             {training.power_stream && training.power_stream.length > 0 ? (
-              <div className={`${styles.chartContainer} ${spaceGrotesk.className}`}>
+              <div className={styles.chartContainer}>
                 <ResponsiveContainer width="100%" height={180}>
-                  <AreaChart data={training.power_stream.map((watts, idx) => ({ time: idx, watts }))}>
+                  <AreaChart data={smoothStream(training.power_stream)}>
                     <defs>
                       <linearGradient id="powerGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.8}/>
@@ -235,14 +256,14 @@
             <div className={styles.chartHeader}>
             <h5 className={styles.chartTitle}>Frecuencia cardíaca</h5>
             <span className={styles.chartMeta}>
-                FC media <strong className={spaceGrotesk.className}>{formatBpm(training.avgheartrate)}</strong>
+                FC media <strong>{formatBpm(training.avgheartrate)}</strong>
             </span>
             </div>
 
             {training.hr_stream && training.hr_stream.length > 0 ? (
-              <div className={`${styles.chartContainer} ${spaceGrotesk.className}`}>
+              <div className={styles.chartContainer}>
                 <ResponsiveContainer width="100%" height={180}>
-                  <AreaChart data={training.hr_stream.map((bpm, idx) => ({ time: idx, bpm }))}>
+                  <AreaChart data={smoothStream(training.hr_stream).map(p => ({ time: p.time, bpm: p.watts }))}>
                     <defs>
                       <linearGradient id="hrGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#ef4444" stopOpacity={0.8}/>
@@ -282,6 +303,16 @@
                 <p className={styles.chartHint}>No hay datos de frecuencia cardíaca disponibles.</p>
               </div>
             )}
+        </div>
+
+        {/* TSS */}
+        <div className={styles.chartCard}>
+            <div className={styles.chartHeader}>
+            <h5 className={styles.chartTitle}>Carga de entrenamiento</h5>
+            <span className={styles.chartMeta}>
+                TSS <strong>{formatTSS(calculateTSS(training.duration, training.weighted_average_watts, ftp))}</strong>
+            </span>
+            </div>
         </div>
         </div>
     );
