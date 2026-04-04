@@ -4,10 +4,7 @@ import { createPortal } from 'react-dom';
 import styles from '@/app/calendario/calendario.module.css';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
-import { Syne } from 'next/font/google';
 import type { NutritionData } from '@/components/NutritionPanel';
-
-const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['500', '600', '700'],

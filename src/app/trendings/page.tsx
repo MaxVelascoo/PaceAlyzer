@@ -135,7 +135,6 @@ function TrendingsContent() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   const loadData = async (userId: string) => {
     setLoading(true);
@@ -159,9 +158,6 @@ function TrendingsContent() {
     }
 
     if (rows && rows.length > 0) {
-      const first = rows[0];
-      const last = rows[rows.length - 1];
-      setDebugInfo(`${rows.length} días en daily_metrics | Primer día: ${first.date} CTL=${first.ctl} | Último: ${last.date} CTL=${last.ctl}`);
       setData(rows.map(r => ({
         date: r.date,
         label: `${r.date.slice(8, 10)}/${r.date.slice(5, 7)}`,
@@ -171,7 +167,6 @@ function TrendingsContent() {
         tsb: Number(r.tsb ?? 0),
       })));
     } else {
-      setDebugInfo('Sin datos en daily_metrics — usando fallback de cliente');
       // Fallback: calcular en cliente si no hay datos en daily_metrics
       const fallbackSince = new Date();
       fallbackSince.setDate(fallbackSince.getDate() - 365);
