@@ -1,7 +1,7 @@
 'use client';
 import React, { useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import styles from '@/app/dashboard/dashboard.module.css';
+import styles from '@/app/calendario/calendario.module.css';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import { Syne } from 'next/font/google';

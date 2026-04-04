@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx
+// src/app/calendario/page.tsx
 import styles from './page.module.css';
 import { Syne, Inter } from 'next/font/google';
 import Link from 'next/link';
@@ -6,7 +6,7 @@ import Link from 'next/link';
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const inter = Inter({ subsets: ['latin'], weight: ['400'] });
 
-export default function DashboardPage() {
+export default function CompletarRegistroPage() {
   return (
     <main className={styles.root}>
       <div className={styles.container}>

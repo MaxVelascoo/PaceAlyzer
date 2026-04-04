@@ -1,6 +1,6 @@
     'use client';
     import React from 'react';
-    import styles from '@/app/dashboard/dashboard.module.css';
+    import styles from '@/app/calendario/calendario.module.css';
     import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
     // Función para formatear tiempo en formato hh:mm:ss o mm:ss

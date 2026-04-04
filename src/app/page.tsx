@@ -65,14 +65,14 @@ const HomePage: React.FC = () => {
   const handleCTA = () => {
     if (!user) return router.push('/start');
     if (hasStrava === false) return router.push('/connect-strava');
-    return router.push('/dashboard');
+    return router.push('/calendario');
   };
 
   const ctaText = !user
     ? 'Empezar'
     : hasStrava === false
       ? 'Conectar con Strava'
-      : 'Ir al Dashboard';
+      : 'Ir al Calendario';
 
   return (
     <>
@@ -107,7 +107,7 @@ const HomePage: React.FC = () => {
                 { 
                 <Image
                   src="/mockup-dashboard3.png"
-                  alt="PaceAlyzer Dashboard"
+                  alt="PaceAlyzer Calendario"
                   width={1200}
                   height={800}
                   className="laptopScreenImg"

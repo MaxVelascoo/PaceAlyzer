@@ -1,235 +1,320 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Syne } from 'next/font/google';
-import { useUser } from '@/context/userContext';
+import React, { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import WeekHeader from '@/components/WeekHeader';
-import { useDashboardData } from '@/hooks/useDashboardData';
-import PlannedWorkoutCard from '@/components/PlannedWorkoutCard';
-import { usePlannedWorkout } from '@/hooks/usePlannedWorkout';
-import DoneWorkoutCard from '@/components/DoneWorkoutCard';
-import NutritionPanel from '@/components/NutritionPanel';
-
+import Link from 'next/link';
+import {
+  AreaChart, Area, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
+} from 'recharts';
 import styles from './dashboard.module.css';
+import { useUser } from '@/context/userContext';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
-const syne = Syne({ subsets: ['latin'], weight: ['700'] });
-const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const ZONE_COLORS = ['#4a90d9', '#5cb85c', '#2ecc71', '#f0ad4e', '#e67e22', '#e05c5c', '#c0392b'];
+const ZONE_COLORS_HR = ['#4a90d9', '#5cb85c', '#2ecc71', '#f0ad4e', '#e67e22'];
 
-function DashboardContent() {
-  const hoy = new Date();
-  const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
-  const searchParams = useSearchParams();
+function ZoneBar({ zone, hours, pct, color }: { zone: string; hours: string; pct: number; color: string }) {
+  return (
+    <div className={styles.zoneRow}>
+      <span className={styles.zoneLabel} style={{ color }}>{zone}</span>
+      <div className={styles.zoneTrack}>
+        <div className={styles.zoneFill} style={{ width: `${pct}%`, background: color }} />
+      </div>
+      <span className={styles.zoneHours}>{hours}</span>
+    </div>
+  );
+}
 
-  const [semanaOffset, setSemanaOffset] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dashboardSemanaOffset');
-      return saved ? parseInt(saved, 10) : 0;
-    }
-    return 0;
-  });
+function CustomDot(props: { cx?: number; cy?: number; index?: number; dataLength?: number }) {
+  const { cx, cy, index, dataLength } = props;
+  if (cx == null || cy == null) return null;
+  const isLast = index === (dataLength ?? 0) - 1;
+  return (
+    <circle cx={cx} cy={cy} r={isLast ? 7 : 4}
+      fill="#FC4C02" stroke="#fff" strokeWidth={isLast ? 2 : 1.5} />
+  );
+}
 
-  const [diaSeleccionado, setDiaSeleccionado] = useState(() => {
-    // Si viene ?date=YYYY-MM-DD desde el chat, calcular el índice del día
-    const dateParam = searchParams?.get('date');
-    if (dateParam) {
-      const d = new Date(dateParam + 'T00:00:00');
-      const weekday = d.getDay() === 0 ? 6 : d.getDay() - 1;
-      return weekday;
-    }
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('dashboardDiaSeleccionado');
-      return saved ? parseInt(saved, 10) : hoyDia;
-    }
-    return hoyDia;
-  });
-
-  // Guardar en localStorage cuando cambien
-  useEffect(() => {
-    localStorage.setItem('dashboardSemanaOffset', semanaOffset.toString());
-  }, [semanaOffset]);
-
-  useEffect(() => {
-    localStorage.setItem('dashboardDiaSeleccionado', diaSeleccionado.toString());
-  }, [diaSeleccionado]);
-
+export default function DashboardPage() {
   const user = useUser()?.user;
-
-  // ✅ hook "limpio" (trainingsByDate)
-  const { hasStrava, loading, trainingsByDate, startOfWeek, refetch, userFtp } = useDashboardData(user?.id, semanaOffset);
-
-  const mes = startOfWeek.toLocaleString('es-ES', { month: 'long' });
-
-  const diasConFechas = useMemo(() => {
-    return dias.map((dia, i) => {
-      const d = new Date(startOfWeek);
-      d.setDate(startOfWeek.getDate() + i);
-      // clave LOCAL YYYY-MM-DD
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      return {
-        nombre: dia,
-        numero: d.getDate(),
-        esHoy: semanaOffset === 0 && i === hoyDia,
-        key,
-      };
-    });
-  }, [startOfWeek, semanaOffset, hoyDia]);
-
-  const selectedKey = diasConFechas[diaSeleccionado]?.key;
-  const { loading: loadingPlanned, workout: plannedWorkout } = usePlannedWorkout(user?.id, selectedKey);
-  const entreno = selectedKey ? (trainingsByDate[selectedKey] || [])[0] : undefined;
-
-  /** --------- REFRESH / SYNC (PRO) ---------
-   * Estrategia recomendada:
-   * - API server-side: calcula last training date en DB y pide a Strava desde lastDate-1 día
-   * - upsert por activity_id
-   * Aquí en UI solo dispara la sync y luego refetch.
-   */
+  const { currentWeek, last9Weeks, today, profile, trendData, loading: loadingWeek } = useDashboardData(user?.id);
   const [syncing, setSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
   const handleSync = async () => {
     if (!user?.id || syncing) return;
-    setSyncError(null);
-
+    setSyncing(true);
+    setSyncMsg(null);
     try {
-      setSyncing(true);
-
-      // Calcular fechas de inicio y fin de la semana actual
-      const startStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
-      const endDate = new Date(startOfWeek);
-      endDate.setDate(startOfWeek.getDate() + 6);
-      const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-
       const res = await fetch('/api/strava/sync-trainings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: user.id, 
-          startDate: startStr,
-          endDate: endStr
-        }),
+        body: JSON.stringify({ userId: user.id, lookbackDays: 30 }),
       });
-
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || 'Error sincronizando entrenos');
-
-      // Refetch data sin recargar la página
-      refetch();
+      if (!res.ok) throw new Error(json?.error ?? 'Error sincronizando');
+      setSyncMsg(`✓ ${json.insertedOrUpdated} actividades`);
     } catch (e) {
-      const error = e as Error;
-      console.error(error);
-      setSyncError(error?.message ?? 'Error sincronizando entrenos');
+      setSyncMsg(`Error: ${(e as Error).message}`);
     } finally {
       setSyncing(false);
     }
   };
 
-  return (
-    <div className={styles.dashboard}>
-      <div className={styles.container}>
-        <div className={`${styles.mes} ${syne.className}`}>
-          {mes.charAt(0).toUpperCase() + mes.slice(1)}
-        </div>
+  // W/kg calculado en cliente
+  const wPerKg = (profile.ftp && profile.weight && profile.weight > 0)
+    ? Math.round((profile.ftp / profile.weight) * 10) / 10
+    : null;
 
-        {/* ✅ WeekHeader + botón refresh a la derecha */}
-        <div className={styles.weekHeaderRow}>
-          <WeekHeader
-            diasConFechas={diasConFechas}
-            diaSeleccionado={diaSeleccionado}
-            semanaOffset={semanaOffset}
-            onDiaClick={setDiaSeleccionado}
-            onPrev={() => setSemanaOffset(o => o - 1)}
-            onNext={() => setSemanaOffset(o => o + 1)}
-          />
+  // Interpretación TSB
+  const tsbLabel = (tsb: number | null) => {
+    if (tsb == null) return '—';
+    if (tsb > 25) return 'Muy descansado';
+    if (tsb > 5)  return 'Descansado';
+    if (tsb > -10) return 'En forma';
+    if (tsb > -25) return 'Fatigado';
+    return 'Muy fatigado';
+  };
 
-          <button
-            type="button"
-            className={styles.stravaSync}
-            onClick={handleSync}
-            disabled={syncing || !user?.id || hasStrava === false}
-            title={hasStrava === false ? 'Conecta Strava para sincronizar' : 'Sincronizar entrenos'}
-            aria-label="Sincronizar entrenos"
-          >
-            {syncing ? 'Sincronizando…' : 'Sincronizar\nentrenos'}
-          </button>
-        </div>
+  const ctlLabel = (ctl: number | null) => {
+    if (ctl == null) return '—';
+    if (ctl < 20) return 'Principiante';
+    if (ctl < 40) return 'Recreativo';
+    if (ctl < 60) return 'Amateur';
+    if (ctl < 80) return 'Avanzado';
+    if (ctl < 100) return 'Competitivo';
+    return 'Élite';
+  };
 
-        {syncError && <div className={styles.syncError}>{syncError}</div>}
+  // Formatear horas y minutos
+  const totalHours = currentWeek ? Math.floor(currentWeek.completed_hours) : 0;
+  const totalMins = currentWeek ? Math.round((currentWeek.completed_hours - totalHours) * 60) : 0;
 
-        <div className={styles.contenidoDia}>
-          <div className={styles.twoCardsLayout}>
-            {/* IZQUIERDA: Planificado */}
-            <section className={styles.cardBlock}>
-              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO PLANIFICADO</h3>
+  // Zonas reales de la semana actual
+  const ZONE_LABELS_POWER = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5', 'Z6', 'Z7'];
+  const ZONE_LABELS_HR    = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
 
-              <div className={`${styles.cardShell} ${styles.planned}`}>
-                {!user?.id ? (
-                  <div className={styles.emptyState}><p>No hay usuario</p></div>
-                ) : loadingPlanned ? (
-                  <div className={styles.emptyState}><p>Cargando…</p></div>
-                ) : plannedWorkout ? (
-                  <PlannedWorkoutCard workout={plannedWorkout} />
-                ) : (
-                  <div className={styles.emptyState}>
-                    <p>No hay entreno planificado este día</p>
-                    <Link href="/chat" className={`${styles.chatButton} ${syne.className}`}>
-                      Hablar con Pazey
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </section>
+  const powerZones = ZONE_LABELS_POWER.map((label, i) => {
+    const key = `z${i + 1}`;
+    const mins = currentWeek?.power_zones_minutes?.[key] ?? 0;
+    const h = Math.floor(mins / 60);
+    const m = Math.round(mins % 60);
+    const hours = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    const maxMins = Math.max(...ZONE_LABELS_POWER.map((_, j) => currentWeek?.power_zones_minutes?.[`z${j + 1}`] ?? 0), 1);
+    return { zone: label, hours, pct: Math.round((mins / maxMins) * 100) };
+  });
 
-            {/* DERECHA: Hecho */}
-            <section className={styles.cardBlock}>
-              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO HECHO</h3>
+  const hrZones = ZONE_LABELS_HR.map((label, i) => {
+    const key = `z${i + 1}`;
+    const mins = currentWeek?.hr_zones_minutes?.[key] ?? 0;
+    const h = Math.floor(mins / 60);
+    const m = Math.round(mins % 60);
+    const hours = h > 0 ? `${h}h ${m}m` : `${m}m`;
+    const maxMins = Math.max(...ZONE_LABELS_HR.map((_, j) => currentWeek?.hr_zones_minutes?.[`z${j + 1}`] ?? 0), 1);
+    return { zone: label, hours, pct: Math.round((mins / maxMins) * 100) };
+  });
+  const weeklyKmChart = last9Weeks.map((w) => {
+    const parts = w.week_start_date.split('-');
+    return { week: `${parts[2]}/${parts[1]}`, km: Math.round(w.completed_distance_km) };
+  });
+  const maxKm = weeklyKmChart.length > 0 ? Math.max(...weeklyKmChart.map(w => w.km)) : 100;
 
-              <div className={`${styles.cardShell} ${styles.done}`}>
-                {loading ? (
-                  <div className={styles.emptyState}>
-                    <p>Cargando…</p>
-                  </div>
-                ) : !user?.id ? (
-                  <div className={styles.emptyState}>
-                    <p>No hay usuario</p>
-                  </div>
-                ) : hasStrava === false ? (
-                  <div className={styles.emptyState}>
-                    <p>Conecta Strava para ver tus entrenos</p>
-                  </div>
-                ) : entreno ? (
-                  <DoneWorkoutCard training={entreno} ftp={userFtp} />
-                ) : (
-                  <div className={styles.emptyState}>
-                    <p>No hay entreno registrado este día</p>
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-          {/* NUTRICIÓN (full-width debajo de las dos columnas) */}
-          <section className={styles.cardBlock}>
-            <h3 className={`${styles.cardHeading} ${syne.className}`}>NUTRICIÓN</h3>
-
-            <div className={`${styles.cardShell} ${styles.fullWidth}`}>
-              <NutritionPanel 
-                nutrition={plannedWorkout?.nutrition ?? null} 
-                loading={loadingPlanned}
-              />
-            </div>
-          </section>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function Dashboard() {
   return (
     <ProtectedRoute>
-      <DashboardContent />
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div className={styles.dashboardHeader}>
+            <h1 className={styles.pageTitle}>Dashboard</h1>
+            <div className={styles.dashboardHeaderRight}>
+              <button
+                type="button"
+                className={styles.stravaSync}
+                onClick={handleSync}
+                disabled={syncing}
+              >
+                {syncing ? 'Sincronizando…' : 'Sincronizar entrenos'}
+              </button>
+              {syncMsg && <span className={styles.syncMsg}>{syncMsg}</span>}
+            </div>
+          </div>
+
+          {/* BLOQUE 1: Estado actual */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Estado actual</h2>
+            <div className={styles.topRow}>
+
+              {/* Card atleta */}
+              <div className={styles.athleteCard}>
+                <div className={styles.athleteRow}>
+                  <div className={styles.athleteMetric}>
+                    <span className={styles.athleteValue} style={{ color: '#f59e0b' }}>{profile.weight ?? '—'}<span className={styles.athleteUnit}>kg</span></span>
+                    <span className={styles.athleteLabel}>Peso</span>
+                  </div>
+                  <div className={styles.athleteDivider} />
+                  <div className={styles.athleteMetric}>
+                    <span className={styles.athleteValue} style={{ color: '#4a90d9' }}>—</span>
+                    <span className={styles.athleteLabel}>VO2max</span>
+                  </div>
+                  <div className={styles.athleteDivider} />
+                  <div className={styles.athleteMetric}>
+                    <span className={styles.athleteValue} style={{ color: '#6366f1' }}>{wPerKg ?? '—'}<span className={styles.athleteUnit}>w/kg</span></span>
+                    <span className={styles.athleteLabel}>W/kg</span>
+                  </div>
+                </div>
+                <div className={styles.athleteRowBottom}>
+                  <div className={styles.athleteMetricSm}>
+                    <span className={styles.athleteValueSm} style={{ color: '#e05c5c' }}>{today.resting_hr ?? '—'}<span className={styles.athleteUnitSm}>{today.resting_hr ? 'bpm' : ''}</span></span>
+                    <span className={styles.athleteLabelSm}>FC reposo · hoy</span>
+                  </div>
+                  <div className={styles.athleteDividerSm} />
+                  <div className={styles.athleteMetricSm}>
+                    <span className={styles.athleteValueSm} style={{ color: '#5cb85c' }}>{today.hrv ?? '—'}<span className={styles.athleteUnitSm}>{today.hrv ? 'ms' : ''}</span></span>
+                    <span className={styles.athleteLabelSm}>HRV · hoy</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card CTL/ATL/TSB */}
+              <div className={styles.ctlCard}>
+                <div className={styles.ctlRow}>
+                  <div className={styles.ctlMetric}>
+                    <span className={styles.ctlValue} style={{ color: '#4a90d9' }}>{today.ctl != null ? today.ctl.toFixed(1) : '—'}</span>
+                    <span className={styles.ctlKey}>CTL</span>
+                    <span className={styles.ctlHint}>{ctlLabel(today.ctl)}</span>
+                  </div>
+                  <div className={styles.ctlDivider} />
+                  <div className={styles.ctlMetric}>
+                    <span className={styles.ctlValue} style={{ color: '#e05c5c' }}>{today.atl != null ? today.atl.toFixed(1) : '—'}</span>
+                    <span className={styles.ctlKey}>ATL</span>
+                    <span className={styles.ctlHint}>Fatiga reciente</span>
+                  </div>
+                  <div className={styles.ctlDivider} />
+                  <div className={styles.ctlMetric}>
+                    <span className={styles.ctlValue} style={{ color: '#5cb85c' }}>{today.tsb != null ? (today.tsb > 0 ? '+' : '') + today.tsb.toFixed(1) : '—'}</span>
+                    <span className={styles.ctlKey}>TSB</span>
+                    <span className={styles.ctlHint}>{tsbLabel(today.tsb)}</span>
+                  </div>
+                </div>
+                <div className={styles.ctlDesc}>{today.tsb != null ? (today.tsb > 5 ? 'Forma óptima. Ideal para competir.' : today.tsb > -10 ? 'Balance equilibrado. Puedes entrenar con normalidad.' : 'Acumulando carga. Considera reducir intensidad.') : 'Sin datos de hoy'}</div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* BLOQUE 2: Progreso semanal */}
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>Progreso semanal</h2>
+            <div className={styles.topRow}>
+
+              {/* Card km + horas + TSS */}
+              <div className={styles.weekSummaryCard}>
+                <div className={styles.weekSummaryRow}>
+                  <div className={styles.weekStat}>
+                    <span className={styles.weekStatIcon}>🚴</span>
+                    <span className={styles.weekStatValue}>{loadingWeek ? '—' : Math.round(currentWeek?.completed_distance_km ?? 0)}</span>
+                    <span className={styles.weekStatUnit}>km</span>
+                    <span className={styles.weekStatLabel}>Kilómetros</span>
+                  </div>
+                  <div className={styles.weekDivider} />
+                  <div className={styles.weekStat}>
+                    <span className={styles.weekStatIcon}>⏱️</span>
+                    <span className={styles.weekStatValue}>{loadingWeek ? '—' : `${totalHours}h`}</span>
+                    <span className={styles.weekStatUnit}>{loadingWeek ? '' : `${totalMins}m`}</span>
+                    <span className={styles.weekStatLabel}>Horas</span>
+                  </div>
+                  <div className={styles.weekDivider} />
+                  <div className={styles.weekStat}>
+                    <span className={styles.weekStatIcon}>⚡</span>
+                    <span className={styles.weekStatValue}>{loadingWeek ? '—' : Math.round(currentWeek?.completed_tss ?? 0)}</span>
+                    <span className={styles.weekStatLabel}>Total TSS</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card gráfico km semanales */}
+              <div className={styles.weekChartCard}>
+                <div className={styles.weekChartTitle}>Últimas 9 semanas</div>
+                <ResponsiveContainer width="100%" height={110}>
+                  <AreaChart data={weeklyKmChart} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#FC4C02" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#FC4C02" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+                    <XAxis dataKey="week" tick={{ fontSize: 10 }} stroke="rgba(0,0,0,0.25)" axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10 }} stroke="rgba(0,0,0,0.25)" axisLine={false} tickLine={false} unit=" km" domain={[0, maxKm]} />
+                    <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} formatter={(v) => [`${v} km`, 'Distancia']} />
+                    <Area
+                      type="monotone" dataKey="km" stroke="#FC4C02" strokeWidth={2.5}
+                      fill="url(#kmGrad)"
+                      dot={(props) => <CustomDot {...props} dataLength={weeklyKmChart.length} />}
+                      activeDot={{ r: 6, fill: '#FC4C02' }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+            </div>
+          </section>
+
+          {/* BLOQUE 3 + 4: Distribución y Tendencia */}
+          <div className={styles.bottomGrid}>
+
+            <section className={styles.zonesCard}>
+              <h2 className={styles.sectionTitle}>Distribución de zonas</h2>
+              <div className={styles.zonesGrid}>
+                <div>
+                  <h3 className={styles.zonesSubtitle}>Potencia</h3>
+                  {powerZones.map((z, i) => <ZoneBar key={z.zone} {...z} color={ZONE_COLORS[i]} />)}
+                </div>
+                <div>
+                  <h3 className={styles.zonesSubtitle}>Frecuencia cardíaca</h3>
+                  {hrZones.map((z, i) => <ZoneBar key={z.zone} {...z} color={ZONE_COLORS_HR[i]} />)}
+                </div>
+              </div>
+            </section>
+
+            <Link href="/trendings" className={styles.trendCard} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Tendencia de carga</h2>
+                <span style={{ fontSize: 12, color: '#4a90d9', fontWeight: 600 }}>Ver detalle →</span>
+              </div>
+              <ResponsiveContainer width="100%" height={220}>
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="gCTL" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4a90d9" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#4a90d9" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gATL" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#e05c5c" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#e05c5c" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gTSB" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#5cb85c" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#5cb85c" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="rgba(0,0,0,0.3)" interval={Math.floor(trendData.length / 6)} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="rgba(0,0,0,0.3)" width={30} />
+                  <Tooltip contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12 }}
+                    formatter={(v) => v === 'ctl' ? 'CTL — Fitness crónico' : v === 'atl' ? 'ATL — Fatiga aguda' : 'TSB — Balance de carga'} />
+                  <Area type="monotone" dataKey="ctl" stroke="#4a90d9" strokeWidth={2} fill="url(#gCTL)" dot={false} />
+                  <Area type="monotone" dataKey="atl" stroke="#e05c5c" strokeWidth={2} fill="url(#gATL)" dot={false} />
+                  <Area type="monotone" dataKey="tsb" stroke="#5cb85c" strokeWidth={2} fill="url(#gTSB)" dot={false} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Link>
+
+          </div>
+
+        </div>
+      </div>
     </ProtectedRoute>
   );
 }

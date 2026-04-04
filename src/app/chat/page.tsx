@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { Syne } from 'next/font/google';
 import styles from './chat.module.css';
 import { useUser } from '@/context/userContext';
 import { usePlannedWorkout } from '@/hooks/usePlannedWorkout';
@@ -12,7 +11,6 @@ import ChatSidebar, { WeekDay } from '@/components/chat/ChatSideBar';
 import ChatThread, { ChatMessage } from '@/components/chat/ChatThread';
 import MessageComposer from '@/components/chat/MessageComposer';
 
-const syne = Syne({ subsets: ['latin'], weight: ['700', '800'] });
 
 function isoTodayLocal() {
   const d = new Date();
@@ -174,7 +172,7 @@ export default function ChatPage() {
 
   return (
     <ProtectedRoute>
-      <div className={`${styles.page} ${syne.className}`}>
+      <div className={styles.page}>
         <div className={styles.shell}>
           <ChatSidebar
             selectedDate={selectedDate}

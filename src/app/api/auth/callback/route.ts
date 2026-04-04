@@ -112,6 +112,6 @@ export async function GET(req: Request) {
     }
   }
 
-  const redirectUrl = new URL('/dashboard', process.env.BASE_URL || 'http://localhost:3000');
+  const redirectUrl = new URL('/calendario', process.env.BASE_URL || 'http://localhost:3000');
   return NextResponse.redirect(redirectUrl);
 }

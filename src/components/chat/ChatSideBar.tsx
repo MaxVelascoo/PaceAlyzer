@@ -53,9 +53,9 @@ export default function ChatSidebar({
           <div className={styles.summaryLoading}>Cargando...</div>
         ) : plannedWorkout ? (
           <Link
-            href={`/dashboard?date=${selectedDate}`}
+            href={`/calendario?date=${selectedDate}`}
             className={styles.summaryCard}
-            title="Ver en el dashboard"
+            title="Ver en el calendario"
           >
             <div className={styles.summaryTitle}>{plannedWorkout.title}</div>
             <div className={styles.summaryDuration}>
@@ -64,7 +64,7 @@ export default function ChatSidebar({
             {plannedWorkout.description && (
               <div className={styles.summaryDescription}>{plannedWorkout.description}</div>
             )}
-            <div className={styles.summaryLink}>Ver en dashboard →</div>
+            <div className={styles.summaryLink}>Ver en calendario →</div>
           </Link>
         ) : (
           <div className={styles.summaryEmpty}>No hay entreno planificado</div>

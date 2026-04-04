@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Syne } from 'next/font/google';
-import styles from '@/app/dashboard/dashboard.module.css';
+import styles from '@/app/calendario/calendario.module.css';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700', '800'] });
 

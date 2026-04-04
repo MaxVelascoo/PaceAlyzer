@@ -1,0 +1,150 @@
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import type { Training } from '@/types/training';
+
+function formatYMDLocal(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export function useCalendarioData(userId: string |undefined, semanaOffset: number) {
+  const [hasStrava, setHasStrava] = useState<boolean | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [trainingsByDate, setTrainingsByDate] = useState<Record<string, Training[]>>({});
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+  const [userFtp, setUserFtp] = useState<number | null>(null);
+
+  const { startOfWeek, endOfWeek } = useMemo(() => {
+    const hoy = new Date();
+    const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+
+    const start = new Date(hoy);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(hoy.getDate() - hoyDia + semanaOffset * 7);
+
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+
+    return { startOfWeek: start, endOfWeek: end };
+  }, [semanaOffset]);
+
+  const refetch = () => {
+    setRefetchTrigger(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    if (!userId) {
+      console.warn('[useCalendarioData] ❗ No userId, abortando fetch');
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const startStr = formatYMDLocal(startOfWeek);
+        const endStr = formatYMDLocal(endOfWeek);
+
+        console.groupCollapsed('[useCalendarioData] 🧪 Debug');
+        console.log('userId:', userId);
+        console.log('semanaOffset:', semanaOffset);
+        console.log('startOfWeek (Date):', startOfWeek);
+        console.log('endOfWeek (Date):', endOfWeek);
+        console.log('startStr (YYYY-MM-DD):', startStr);
+        console.log('endStr (YYYY-MM-DD):', endStr);
+        console.groupEnd();
+
+        // 1) Strava conectado
+        const { data: stravaAccount, error: stravaError } = await supabase
+          .from('strava_accounts')
+          .select('strava_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (stravaError) console.error('[useCalendarioData] ❌ Strava error:', stravaError);
+        if (cancelled) return;
+
+        console.log('[useCalendarioData] ✅ Strava account:', stravaAccount);
+        setHasStrava(!!stravaAccount?.strava_id);
+
+        // 1b) FTP del usuario
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('ftp')
+          .eq('id', userId)
+          .maybeSingle();
+        if (!cancelled && userProfile?.ftp) {
+          setUserFtp(userProfile.ftp);
+        }
+
+        // 2) Trainings (solo columnas necesarias)
+        const { data: trainings, error: trainingsError } = await supabase
+          .from('trainings')
+          .select('activity_id, name, date, duration, distance, avgheartrate, weighted_average_watts, altitude, power_stream, hr_stream')
+          .eq('user_id', userId)
+          .gte('date', startStr)
+          .lte('date', endStr);
+
+        if (trainingsError) {
+          console.error('[useCalendarioData] ❌ Trainings error:', trainingsError);
+        } else {
+          console.groupCollapsed('[useCalendarioData] ✅ Trainings OK');
+          console.log('count:', trainings?.length ?? 0);
+          console.log('rows:', trainings);
+          // ayuda extra: ver qué date viene realmente
+          if (trainings?.length) {
+            console.log('sample date:', trainings[0]?.date);
+            console.log('all dates:', trainings.map(t => t.date));
+          }
+          console.groupEnd();
+        }
+
+        if (cancelled) return;
+
+        const grouped: Record<string, Training[]> = {};
+        (trainings ?? []).forEach((t: Training) => {
+          (grouped[t.date] ||= []).push(t);
+        });
+
+        console.groupCollapsed('[useCalendarioData] 🗂 grouped trainingsByDate');
+        console.log('keys:', Object.keys(grouped));
+        console.log('grouped:', grouped);
+        console.groupEnd();
+
+        setTrainingsByDate(grouped);
+      } catch (err) {
+        console.error('[useCalendarioData] 🔥 Error inesperado:', err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, semanaOffset, startOfWeek, endOfWeek, refetchTrigger]);
+
+  useEffect(() => {
+    console.groupCollapsed('[useCalendarioData] 📦 state update');
+    console.log('loading:', loading);
+    console.log('hasStrava:', hasStrava);
+    console.log('trainingsByDate keys:', Object.keys(trainingsByDate));
+    console.groupEnd();
+  }, [loading, hasStrava, trainingsByDate]);
+
+  return {
+    hasStrava,
+    loading,
+    trainingsByDate,
+    startOfWeek,
+    refetch,
+    userFtp,
+  };
+}

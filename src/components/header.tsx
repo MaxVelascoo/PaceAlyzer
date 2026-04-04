@@ -40,11 +40,11 @@ export default function Header() {
                 <Link href="/chat" className={`nav-link ${syne.className}`}>
                   Chat
                 </Link>
-                <Link href="/dashboard" className={`nav-link dashboard-link ${syne.className}`}>
+                <Link href="/dashboard" className={`nav-link ${syne.className}`}>
                   Dashboard
                 </Link>
-                <Link href="/trendings" className={`nav-link ${syne.className}`}>
-                  Trendings
+                <Link href="/calendario" className={`nav-link calendario-link ${syne.className}`}>
+                  Calendario
                 </Link>
                 <Link href="/profile" className={`nav-link ${syne.className}`}>
                   Perfil

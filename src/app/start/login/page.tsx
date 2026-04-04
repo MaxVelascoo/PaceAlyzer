@@ -43,7 +43,7 @@ export default function LoginPage() {
 
     console.log('Login exitoso, redirigiendo...');
     toast('Inicio de sesión correcto')
-    router.push('/dashboard');
+    router.push('/calendario');
   };
 
 

@@ -1,150 +1,131 @@
-import { useEffect, useMemo, useState } from 'react';
+'use client';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import type { Training } from '@/types/training';
 
-function formatYMDLocal(d: Date) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+export type WeeklySummary = {
+  iso_year: number;
+  iso_week: number;
+  week_start_date: string;
+  completed_sessions_count: number;
+  completed_hours: number;
+  completed_distance_km: number;
+  completed_tss: number;
+  ctl_end: number | null;
+  atl_end: number | null;
+  tsb_end: number | null;
+  power_zones_minutes: Record<string, number> | null;
+  hr_zones_minutes: Record<string, number> | null;
+};
 
-export function useDashboardData(userId: string |undefined, semanaOffset: number) {
-  const [hasStrava, setHasStrava] = useState<boolean | null>(null);
+export type TodayMetrics = {
+  ctl: number | null;
+  atl: number | null;
+  tsb: number | null;
+  resting_hr: number | null;
+  hrv: number | null;
+};
+
+export type AthleteProfile = {
+  weight: number | null;
+  ftp: number | null;
+};
+
+export type TrendPoint = {
+  date: string;
+  label: string;
+  ctl: number;
+  atl: number;
+  tsb: number;
+};
+
+export function useDashboardData(userId: string | undefined) {
+  const [currentWeek, setCurrentWeek] = useState<WeeklySummary | null>(null);
+  const [last9Weeks, setLast9Weeks] = useState<WeeklySummary[]>([]);
+  const [today, setToday] = useState<TodayMetrics>({ ctl: null, atl: null, tsb: null, resting_hr: null, hrv: null });
+  const [profile, setProfile] = useState<AthleteProfile>({ weight: null, ftp: null });
+  const [trendData, setTrendData] = useState<TrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [trainingsByDate, setTrainingsByDate] = useState<Record<string, Training[]>>({});
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
-  const [userFtp, setUserFtp] = useState<number | null>(null);
-
-  const { startOfWeek, endOfWeek } = useMemo(() => {
-    const hoy = new Date();
-    const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
-
-    const start = new Date(hoy);
-    start.setHours(0, 0, 0, 0);
-    start.setDate(hoy.getDate() - hoyDia + semanaOffset * 7);
-
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-
-    return { startOfWeek: start, endOfWeek: end };
-  }, [semanaOffset]);
-
-  const refetch = () => {
-    setRefetchTrigger(prev => prev + 1);
-  };
 
   useEffect(() => {
-    if (!userId) {
-      console.warn('[useDashboardData] ❗ No userId, abortando fetch');
-      return;
-    }
+    if (!userId) return;
 
-    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const since42Days = new Date();
+      since42Days.setDate(since42Days.getDate() - 42);
+      const sinceStr = since42Days.toISOString().slice(0, 10);
 
-        const startStr = formatYMDLocal(startOfWeek);
-        const endStr = formatYMDLocal(endOfWeek);
-
-        console.groupCollapsed('[useDashboardData] 🧪 Debug');
-        console.log('userId:', userId);
-        console.log('semanaOffset:', semanaOffset);
-        console.log('startOfWeek (Date):', startOfWeek);
-        console.log('endOfWeek (Date):', endOfWeek);
-        console.log('startStr (YYYY-MM-DD):', startStr);
-        console.log('endStr (YYYY-MM-DD):', endStr);
-        console.groupEnd();
-
-        // 1) Strava conectado
-        const { data: stravaAccount, error: stravaError } = await supabase
-          .from('strava_accounts')
-          .select('strava_id')
+      const [weekliesRes, todayRes, profileRes, trendRes] = await Promise.all([
+        supabase
+          .from('weekly_summaries')
+          .select('iso_year, iso_week, week_start_date, completed_sessions_count, completed_hours, completed_distance_km, completed_tss, ctl_end, atl_end, tsb_end, power_zones_minutes, hr_zones_minutes')
           .eq('user_id', userId)
-          .maybeSingle();
+          .order('week_start_date', { ascending: false })
+          .limit(9),
 
-        if (stravaError) console.error('[useDashboardData] ❌ Strava error:', stravaError);
-        if (cancelled) return;
+        supabase
+          .from('daily_metrics')
+          .select('ctl, atl, tsb, resting_hr, hrv')
+          .eq('user_id', userId)
+          .eq('date', todayIso)
+          .maybeSingle(),
 
-        console.log('[useDashboardData] ✅ Strava account:', stravaAccount);
-        setHasStrava(!!stravaAccount?.strava_id);
-
-        // 1b) FTP del usuario
-        const { data: userProfile } = await supabase
+        supabase
           .from('users')
-          .select('ftp')
+          .select('weight, ftp')
           .eq('id', userId)
-          .maybeSingle();
-        if (!cancelled && userProfile?.ftp) {
-          setUserFtp(userProfile.ftp);
-        }
+          .maybeSingle(),
 
-        // 2) Trainings (solo columnas necesarias)
-        const { data: trainings, error: trainingsError } = await supabase
-          .from('trainings')
-          .select('activity_id, name, date, duration, distance, avgheartrate, weighted_average_watts, altitude, power_stream, hr_stream')
+        supabase
+          .from('daily_metrics')
+          .select('date, ctl, atl, tsb')
           .eq('user_id', userId)
-          .gte('date', startStr)
-          .lte('date', endStr);
+          .gte('date', sinceStr)
+          .order('date', { ascending: true }),
+      ]);
 
-        if (trainingsError) {
-          console.error('[useDashboardData] ❌ Trainings error:', trainingsError);
-        } else {
-          console.groupCollapsed('[useDashboardData] ✅ Trainings OK');
-          console.log('count:', trainings?.length ?? 0);
-          console.log('rows:', trainings);
-          // ayuda extra: ver qué date viene realmente
-          if (trainings?.length) {
-            console.log('sample date:', trainings[0]?.date);
-            console.log('all dates:', trainings.map(t => t.date));
-          }
-          console.groupEnd();
-        }
-
-        if (cancelled) return;
-
-        const grouped: Record<string, Training[]> = {};
-        (trainings ?? []).forEach((t: Training) => {
-          (grouped[t.date] ||= []).push(t);
-        });
-
-        console.groupCollapsed('[useDashboardData] 🗂 grouped trainingsByDate');
-        console.log('keys:', Object.keys(grouped));
-        console.log('grouped:', grouped);
-        console.groupEnd();
-
-        setTrainingsByDate(grouped);
-      } catch (err) {
-        console.error('[useDashboardData] 🔥 Error inesperado:', err);
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (weekliesRes.data && weekliesRes.data.length > 0) {
+        setCurrentWeek(weekliesRes.data[0]);
+        setLast9Weeks([...weekliesRes.data].reverse());
       }
+
+      if (todayRes.data) {
+        setToday({
+          ctl: todayRes.data.ctl ?? null,
+          atl: todayRes.data.atl ?? null,
+          tsb: todayRes.data.tsb ?? null,
+          resting_hr: todayRes.data.resting_hr ?? null,
+          hrv: todayRes.data.hrv ?? null,
+        });
+      }
+
+      if (profileRes.data) {
+        setProfile({
+          weight: profileRes.data.weight ?? null,
+          ftp: profileRes.data.ftp ?? null,
+        });
+      }
+
+      if (trendRes.data && trendRes.data.length > 0) {
+        setTrendData(trendRes.data.map(r => {
+          const parts = r.date.split('-');
+          return {
+            date: r.date,
+            label: `${parts[2]}/${parts[1]}`,
+            ctl: Number(r.ctl ?? 0),
+            atl: Number(r.atl ?? 0),
+            tsb: Number(r.tsb ?? 0),
+          };
+        }));
+      }
+
+      setLoading(false);
     };
 
-    fetchData();
+    load();
+  }, [userId]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, semanaOffset, startOfWeek, endOfWeek, refetchTrigger]);
-
-  useEffect(() => {
-    console.groupCollapsed('[useDashboardData] 📦 state update');
-    console.log('loading:', loading);
-    console.log('hasStrava:', hasStrava);
-    console.log('trainingsByDate keys:', Object.keys(trainingsByDate));
-    console.groupEnd();
-  }, [loading, hasStrava, trainingsByDate]);
-
-  return {
-    hasStrava,
-    loading,
-    trainingsByDate,
-    startOfWeek,
-    refetch,
-    userFtp,
-  };
+  return { currentWeek, last9Weeks, today, profile, trendData, loading };
 }

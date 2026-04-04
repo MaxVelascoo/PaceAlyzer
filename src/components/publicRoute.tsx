@@ -9,7 +9,7 @@ export default function PublicRoute({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (user) {
-      router.replace('/dashboard');
+      router.replace('/calendario');
     }
   }, [user, router]);
 
