@@ -455,3 +455,9 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.ctlValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}

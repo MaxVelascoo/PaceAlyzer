@@ -25,6 +25,12 @@ export type TodayMetrics = {
   hrv: number | null;
 };
 
+export type YesterdayMetrics = {
+  ctl: number | null;
+  atl: number | null;
+  tsb: number | null;
+};
+
 export type AthleteProfile = {
   weight: number | null;
   ftp: number | null;
@@ -42,6 +48,7 @@ export function useDashboardData(userId: string | undefined) {
   const [currentWeek, setCurrentWeek] = useState<WeeklySummary | null>(null);
   const [last9Weeks, setLast9Weeks] = useState<WeeklySummary[]>([]);
   const [today, setToday] = useState<TodayMetrics>({ ctl: null, atl: null, tsb: null, resting_hr: null, hrv: null });
+  const [yesterday, setYesterday] = useState<YesterdayMetrics>({ ctl: null, atl: null, tsb: null });
   const [profile, setProfile] = useState<AthleteProfile>({ weight: null, ftp: null });
   const [trendData, setTrendData] = useState<TrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +64,11 @@ export function useDashboardData(userId: string | undefined) {
       since42Days.setDate(since42Days.getDate() - 42);
       const sinceStr = since42Days.toISOString().slice(0, 10);
 
-      const [weekliesRes, todayRes, profileRes, trendRes] = await Promise.all([
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterdayIso = yesterdayDate.toISOString().slice(0, 10);
+
+      const [weekliesRes, todayRes, profileRes, trendRes, yesterdayRes] = await Promise.all([
         supabase
           .from('weekly_summaries')
           .select('iso_year, iso_week, week_start_date, completed_sessions_count, completed_hours, completed_distance_km, completed_tss, ctl_end, atl_end, tsb_end, power_zones_minutes, hr_zones_minutes')
@@ -84,6 +95,13 @@ export function useDashboardData(userId: string | undefined) {
           .eq('user_id', userId)
           .gte('date', sinceStr)
           .order('date', { ascending: true }),
+
+        supabase
+          .from('daily_metrics')
+          .select('ctl, atl, tsb')
+          .eq('user_id', userId)
+          .eq('date', yesterdayIso)
+          .maybeSingle(),
       ]);
 
       if (weekliesRes.data && weekliesRes.data.length > 0) {
@@ -121,11 +139,19 @@ export function useDashboardData(userId: string | undefined) {
         }));
       }
 
+      if (yesterdayRes.data) {
+        setYesterday({
+          ctl: yesterdayRes.data.ctl ?? null,
+          atl: yesterdayRes.data.atl ?? null,
+          tsb: yesterdayRes.data.tsb ?? null,
+        });
+      }
+
       setLoading(false);
     };
 
     load();
   }, [userId]);
 
-  return { currentWeek, last9Weeks, today, profile, trendData, loading };
+  return { currentWeek, last9Weeks, today, yesterday, profile, trendData, loading };
 }

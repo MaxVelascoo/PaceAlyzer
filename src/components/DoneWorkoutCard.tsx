@@ -182,19 +182,27 @@
             </a>
         </div>
 
-        {/* Stats grid */}
-        <div className={styles.statsGrid}>
-            {statCards.map((c) => (
-            <div key={c.label} className={`${styles.statCard} ${styles[`tone_${c.tone}`]}`}>
-                <div className={styles.statTop}>
-                {c.icon}
-                <div className={styles.statValue}>
-                    {c.value}
-                </div>
-                </div>
-                <div className={styles.statLabel}>{c.label}</div>
-            </div>
-            ))}
+        {/* Stats unificados */}
+        <div className={styles.doneStatsCard}>
+          <div className={styles.doneStatItem}>
+            <span className={styles.doneStatValue}>{formatDuration(training.duration)}</span>
+            <span className={styles.doneStatLabel}>Duración</span>
+          </div>
+          <div className={styles.doneStatDivider} />
+          <div className={styles.doneStatItem}>
+            <span className={styles.doneStatValue}>{formatKm(training.distance, 1)}</span>
+            <span className={styles.doneStatLabel}>Distancia</span>
+          </div>
+          <div className={styles.doneStatDivider} />
+          <div className={styles.doneStatItem}>
+            <span className={styles.doneStatValue}>{formatSpeed(training.distance, training.duration)}</span>
+            <span className={styles.doneStatLabel}>Vel. Media</span>
+          </div>
+          <div className={styles.doneStatDivider} />
+          <div className={styles.doneStatItem}>
+            <span className={styles.doneStatValue}>{formatElevation(training.altitude)}</span>
+            <span className={styles.doneStatLabel}>Altitud</span>
+          </div>
         </div>
 
         {/* Power chart */}

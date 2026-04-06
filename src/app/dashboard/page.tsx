@@ -38,7 +38,12 @@ function CustomDot(props: { cx?: number; cy?: number; index?: number; dataLength
 
 export default function DashboardPage() {
   const user = useUser()?.user;
-  const { currentWeek, last9Weeks, today, profile, trendData, loading: loadingWeek } = useDashboardData(user?.id);
+  const { currentWeek, last9Weeks, today, yesterday, profile, trendData, loading: loadingWeek } = useDashboardData(user?.id);
+
+  const arrow = (current: number | null, prev: number | null) => {
+    if (current == null || prev == null) return null;
+    return current >= prev ? '↑' : '↓';
+  };
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
 
@@ -179,19 +184,28 @@ export default function DashboardPage() {
               <div className={styles.ctlCard}>
                 <div className={styles.ctlRow}>
                   <div className={styles.ctlMetric}>
-                    <span className={styles.ctlValue} style={{ color: '#4a90d9' }}>{today.ctl != null ? today.ctl.toFixed(1) : '—'}</span>
+                    <div className={styles.ctlValueRow}>
+                      <span className={styles.ctlValue} style={{ color: '#4a90d9' }}>{today.ctl != null ? today.ctl.toFixed(1) : '—'}</span>
+                      {arrow(today.ctl, yesterday.ctl) && <span style={{ color: '#4a90d9', fontSize: '1rem', marginLeft: 4 }}>{arrow(today.ctl, yesterday.ctl)}</span>}
+                    </div>
                     <span className={styles.ctlKey}>CTL</span>
                     <span className={styles.ctlHint}>{ctlLabel(today.ctl)}</span>
                   </div>
                   <div className={styles.ctlDivider} />
                   <div className={styles.ctlMetric}>
-                    <span className={styles.ctlValue} style={{ color: '#e05c5c' }}>{today.atl != null ? today.atl.toFixed(1) : '—'}</span>
+                    <div className={styles.ctlValueRow}>
+                      <span className={styles.ctlValue} style={{ color: '#e05c5c' }}>{today.atl != null ? today.atl.toFixed(1) : '—'}</span>
+                      {arrow(today.atl, yesterday.atl) && <span style={{ color: '#e05c5c', fontSize: '1rem', marginLeft: 4 }}>{arrow(today.atl, yesterday.atl)}</span>}
+                    </div>
                     <span className={styles.ctlKey}>ATL</span>
                     <span className={styles.ctlHint}>Fatiga reciente</span>
                   </div>
                   <div className={styles.ctlDivider} />
                   <div className={styles.ctlMetric}>
-                    <span className={styles.ctlValue} style={{ color: '#5cb85c' }}>{today.tsb != null ? (today.tsb > 0 ? '+' : '') + today.tsb.toFixed(1) : '—'}</span>
+                    <div className={styles.ctlValueRow}>
+                      <span className={styles.ctlValue} style={{ color: '#5cb85c' }}>{today.tsb != null ? (today.tsb > 0 ? '+' : '') + today.tsb.toFixed(1) : '—'}</span>
+                      {arrow(today.tsb, yesterday.tsb) && <span style={{ color: '#5cb85c', fontSize: '1rem', marginLeft: 4 }}>{arrow(today.tsb, yesterday.tsb)}</span>}
+                    </div>
                     <span className={styles.ctlKey}>TSB</span>
                     <span className={styles.ctlHint}>{tsbLabel(today.tsb)}</span>
                   </div>
@@ -211,21 +225,16 @@ export default function DashboardPage() {
               <div className={styles.weekSummaryCard}>
                 <div className={styles.weekSummaryRow}>
                   <div className={styles.weekStat}>
-                    <span className={styles.weekStatIcon}>🚴</span>
                     <span className={styles.weekStatValue}>{loadingWeek ? '—' : Math.round(currentWeek?.completed_distance_km ?? 0)}</span>
                     <span className={styles.weekStatUnit}>km</span>
-                    <span className={styles.weekStatLabel}>Kilómetros</span>
                   </div>
                   <div className={styles.weekDivider} />
                   <div className={styles.weekStat}>
-                    <span className={styles.weekStatIcon}>⏱️</span>
                     <span className={styles.weekStatValue}>{loadingWeek ? '—' : `${totalHours}h`}</span>
                     <span className={styles.weekStatUnit}>{loadingWeek ? '' : `${totalMins}m`}</span>
-                    <span className={styles.weekStatLabel}>Horas</span>
                   </div>
                   <div className={styles.weekDivider} />
                   <div className={styles.weekStat}>
-                    <span className={styles.weekStatIcon}>⚡</span>
                     <span className={styles.weekStatValue}>{loadingWeek ? '—' : Math.round(currentWeek?.completed_tss ?? 0)}</span>
                     <span className={styles.weekStatLabel}>Total TSS</span>
                   </div>

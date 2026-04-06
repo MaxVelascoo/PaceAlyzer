@@ -16,6 +16,20 @@ function calculateTSS(
   return Math.round((duration_sec * np * IF) / (ftp * 3600) * 100);
 }
 
+function calculateNP(powerStream: number[]): number | null {
+  if (!powerStream || powerStream.length < 30) return null;
+  const windowSize = 30;
+  const rolling: number[] = [];
+  for (let i = 0; i <= powerStream.length - windowSize; i++) {
+    const slice = powerStream.slice(i, i + windowSize);
+    const avg = slice.reduce((a, b) => a + b, 0) / windowSize;
+    rolling.push(avg);
+  }
+  const fourthPowers = rolling.map(v => Math.pow(v, 4));
+  const meanFourth = fourthPowers.reduce((a, b) => a + b, 0) / fourthPowers.length;
+  return Math.round(Math.pow(meanFourth, 0.25));
+}
+
 async function refreshStravaToken(refreshToken: string) {
   const res = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
@@ -192,6 +206,8 @@ export async function POST(req: Request) {
         console.warn(`Failed to fetch streams for activity ${a.id}:`, err);
       }
 
+      const np = powerStream ? calculateNP(powerStream) : (a.weighted_average_watts ? Number(a.weighted_average_watts) : null);
+
       return {
         user_id: userId,
         activity_id: Number(a.id),
@@ -201,13 +217,13 @@ export async function POST(req: Request) {
         distance: Number(a.distance),
         duration: Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)),
         avgheartrate: a.average_heartrate ? Number(a.average_heartrate) : null,
-        weighted_average_watts: a.weighted_average_watts ? Number(a.weighted_average_watts) : null,
+        weighted_average_watts: np,
         altitude: a.total_elevation_gain ? Number(a.total_elevation_gain) : null,
         power_stream: powerStream,
         hr_stream: hrStream,
         TSS: calculateTSS(
           Math.round(Number(a.moving_time ?? a.elapsed_time ?? 0)),
-          a.weighted_average_watts ? Number(a.weighted_average_watts) : null,
+          np,
           ftp,
         ),
       };

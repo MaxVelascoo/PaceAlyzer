@@ -939,3 +939,43 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Done workout stats unificados ── */
+.doneStatsCard {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(15,15,20,0.07);
+  border-radius: 14px;
+  padding: 14px 20px;
+}
+
+.doneStatItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.doneStatValue {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f0f14;
+  letter-spacing: -0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.doneStatLabel {
+  font-size: 0.72rem;
+  color: rgba(15,15,20,0.45);
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.doneStatDivider {
+  width: 1px;
+  height: 36px;
+  background: rgba(15,15,20,0.08);
+  flex-shrink: 0;
+}
