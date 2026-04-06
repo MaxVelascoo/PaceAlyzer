@@ -53,7 +53,7 @@ export default function ChatSidebar({
           <div className={styles.summaryLoading}>Cargando...</div>
         ) : plannedWorkout ? (
           <Link
-            href={`/calendario?date=${selectedDate}`}
+            href={`/calendario/dia?date=${selectedDate}`}
             className={styles.summaryCard}
             title="Ver en el calendario"
           >

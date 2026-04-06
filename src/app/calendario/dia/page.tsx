@@ -1,0 +1,252 @@
+'use client';
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Syne } from 'next/font/google';
+import { useUser } from '@/context/userContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import WeekHeader from '@/components/WeekHeader';
+import { useCalendarioData } from '@/hooks/useCalendarioData';
+import PlannedWorkoutCard from '@/components/PlannedWorkoutCard';
+import { usePlannedWorkout } from '@/hooks/usePlannedWorkout';
+import DoneWorkoutCard from '@/components/DoneWorkoutCard';
+import NutritionPanel from '@/components/NutritionPanel';
+
+import styles from '../calendario.module.css';
+
+const syne = Syne({ subsets: ['latin'], weight: ['700'] });
+const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+function CalendarioContent() {
+  const hoy = new Date();
+  const hoyDia = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+  const searchParams = useSearchParams();
+
+  const [semanaOffset, setSemanaOffset] = useState(() => {
+    const dateParam = searchParams?.get('date');
+    if (dateParam) {
+      // Calcular el offset de semana respecto a la semana actual
+      const target = new Date(dateParam + 'T00:00:00');
+      const todayMon = new Date(hoy);
+      todayMon.setDate(hoy.getDate() - hoyDia);
+      todayMon.setHours(0, 0, 0, 0);
+      const targetMon = new Date(target);
+      const targetDow = target.getDay() === 0 ? 6 : target.getDay() - 1;
+      targetMon.setDate(target.getDate() - targetDow);
+      targetMon.setHours(0, 0, 0, 0);
+      const diffMs = targetMon.getTime() - todayMon.getTime();
+      return Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+    }
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('calendarioSemanaOffset');
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
+  });
+
+  const [diaSeleccionado, setDiaSeleccionado] = useState(() => {
+    const dateParam = searchParams?.get('date');
+    if (dateParam) {
+      const d = new Date(dateParam + 'T00:00:00');
+      return d.getDay() === 0 ? 6 : d.getDay() - 1;
+    }
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('calendarioDiaSeleccionado');
+      return saved ? parseInt(saved, 10) : hoyDia;
+    }
+    return hoyDia;
+  });
+
+  // Guardar en localStorage cuando cambien
+  useEffect(() => {
+    localStorage.setItem('calendarioSemanaOffset', semanaOffset.toString());
+  }, [semanaOffset]);
+
+  useEffect(() => {
+    localStorage.setItem('calendarioDiaSeleccionado', diaSeleccionado.toString());
+  }, [diaSeleccionado]);
+
+  const user = useUser()?.user;
+
+  // ✅ hook "limpio" (trainingsByDate)
+  const { hasStrava, loading, trainingsByDate, startOfWeek, refetch, userFtp } = useCalendarioData(user?.id, semanaOffset);
+
+  const mes = startOfWeek.toLocaleString('es-ES', { month: 'long' });
+
+  const diasConFechas = useMemo(() => {
+    return dias.map((dia, i) => {
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      // clave LOCAL YYYY-MM-DD
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return {
+        nombre: dia,
+        numero: d.getDate(),
+        esHoy: semanaOffset === 0 && i === hoyDia,
+        key,
+      };
+    });
+  }, [startOfWeek, semanaOffset, hoyDia]);
+
+  const selectedKey = diasConFechas[diaSeleccionado]?.key;
+  const { loading: loadingPlanned, workout: plannedWorkout } = usePlannedWorkout(user?.id, selectedKey);
+  const entreno = selectedKey ? (trainingsByDate[selectedKey] || [])[0] : undefined;
+
+  /** --------- REFRESH / SYNC (PRO) ---------
+   * Estrategia recomendada:
+   * - API server-side: calcula last training date en DB y pide a Strava desde lastDate-1 día
+   * - upsert por activity_id
+   * Aquí en UI solo dispara la sync y luego refetch.
+   */
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const handleSync = async () => {
+    if (!user?.id || syncing) return;
+    setSyncError(null);
+
+    try {
+      setSyncing(true);
+
+      // Calcular fechas de inicio y fin de la semana actual
+      const startStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
+      const endDate = new Date(startOfWeek);
+      endDate.setDate(startOfWeek.getDate() + 6);
+      const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+
+      const res = await fetch('/api/strava/sync-trainings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: user.id, 
+          startDate: startStr,
+          endDate: endStr
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Error sincronizando entrenos');
+
+      // Refetch data sin recargar la página
+      refetch();
+    } catch (e) {
+      const error = e as Error;
+      console.error(error);
+      setSyncError(error?.message ?? 'Error sincronizando entrenos');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  return (
+    <div className={styles.calendario}>
+      <div className={styles.container}>
+        <div style={{ marginBottom: 8 }}>
+          <Link href="/calendario" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: 'rgba(15,15,20,0.55)', textDecoration: 'none', fontFamily: '-apple-system, BlinkMacSystemFont, Helvetica Neue, Helvetica, Arial, sans-serif' }}>
+            ← Volver al calendario
+          </Link>
+        </div>
+        <div className={`${styles.mes} ${syne.className}`}>
+          {mes.charAt(0).toUpperCase() + mes.slice(1)}
+        </div>
+
+        {/* ✅ WeekHeader + botón refresh a la derecha */}
+        <div className={styles.weekHeaderRow}>
+          <WeekHeader
+            diasConFechas={diasConFechas}
+            diaSeleccionado={diaSeleccionado}
+            semanaOffset={semanaOffset}
+            onDiaClick={setDiaSeleccionado}
+            onPrev={() => setSemanaOffset(o => o - 1)}
+            onNext={() => setSemanaOffset(o => o + 1)}
+          />
+
+          <button
+            type="button"
+            className={styles.stravaSync}
+            onClick={handleSync}
+            disabled={syncing || !user?.id || hasStrava === false}
+            title={hasStrava === false ? 'Conecta Strava para sincronizar' : 'Sincronizar entrenos'}
+            aria-label="Sincronizar entrenos"
+          >
+            {syncing ? 'Sincronizando…' : 'Sincronizar\nentrenos'}
+          </button>
+        </div>
+
+        {syncError && <div className={styles.syncError}>{syncError}</div>}
+
+        <div className={styles.contenidoDia}>
+          <div className={styles.twoCardsLayout}>
+            {/* IZQUIERDA: Planificado */}
+            <section className={styles.cardBlock}>
+              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO PLANIFICADO</h3>
+
+              <div className={`${styles.cardShell} ${styles.planned}`}>
+                {!user?.id ? (
+                  <div className={styles.emptyState}><p>No hay usuario</p></div>
+                ) : loadingPlanned ? (
+                  <div className={styles.emptyState}><p>Cargando…</p></div>
+                ) : plannedWorkout ? (
+                  <PlannedWorkoutCard workout={plannedWorkout} />
+                ) : (
+                  <div className={styles.emptyState}>
+                    <p>No hay entreno planificado este día</p>
+                    <Link href="/chat" className={`${styles.chatButton} ${syne.className}`}>
+                      Hablar con Pazey
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* DERECHA: Hecho */}
+            <section className={styles.cardBlock}>
+              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO HECHO</h3>
+
+              <div className={`${styles.cardShell} ${styles.done}`}>
+                {loading ? (
+                  <div className={styles.emptyState}>
+                    <p>Cargando…</p>
+                  </div>
+                ) : !user?.id ? (
+                  <div className={styles.emptyState}>
+                    <p>No hay usuario</p>
+                  </div>
+                ) : hasStrava === false ? (
+                  <div className={styles.emptyState}>
+                    <p>Conecta Strava para ver tus entrenos</p>
+                  </div>
+                ) : entreno ? (
+                  <DoneWorkoutCard training={entreno} ftp={userFtp} />
+                ) : (
+                  <div className={styles.emptyState}>
+                    <p>No hay entreno registrado este día</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+          {/* NUTRICIÓN (full-width debajo de las dos columnas) */}
+          <section className={styles.cardBlock}>
+            <h3 className={`${styles.cardHeading} ${syne.className}`}>NUTRICIÓN</h3>
+
+            <div className={`${styles.cardShell} ${styles.fullWidth}`}>
+              <NutritionPanel 
+                nutrition={plannedWorkout?.nutrition ?? null} 
+                loading={loadingPlanned}
+              />
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Calendario() {
+  return (
+    <ProtectedRoute>
+      <CalendarioContent />
+    </ProtectedRoute>
+  );
+}
