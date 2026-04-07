@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import styles from '@/app/calendario/calendario.module.css';
 import { Space_Grotesk } from 'next/font/google';
-import Link from 'next/link';
 import type { NutritionData } from '@/components/NutritionPanel';
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -249,14 +248,6 @@ export default function PlannedWorkoutCard({ workout }: { workout: PlannedWorkou
         <span className={styles.totalLabel}>Duración total</span>
         <span className={styles.totalValue}>{formatStepDuration(total)}</span>
       </footer>
-
-      {/* Chat CTA */}
-      <div className={styles.chatCTA}>
-        <p className={styles.chatCTAText}>¿Quieres modificar este entreno?</p>
-        <Link href="/chat" className={styles.chatButton}>
-            Hablar con Pazey
-        </Link>
-      </div>
     </div>
   );
 }

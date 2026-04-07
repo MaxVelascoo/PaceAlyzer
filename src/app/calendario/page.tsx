@@ -54,6 +54,13 @@ export default function CalendarioPage() {
   useEffect(() => {
     if (!user?.id) return;
     const load = async () => {
+      // Para las weekly_summaries necesitamos también la semana que empieza
+      // hasta 6 días ANTES del inicio del mes (semana que empieza en el mes anterior
+      // pero cuyo domingo cae dentro de este mes).
+      const weekQueryStart = new Date(year, month, 1);
+      weekQueryStart.setDate(weekQueryStart.getDate() - 6);
+      const weekQueryStartStr = `${weekQueryStart.getFullYear()}-${String(weekQueryStart.getMonth() + 1).padStart(2, '0')}-${String(weekQueryStart.getDate()).padStart(2, '0')}`;
+
       const [plannedRes, doneRes, weekRes] = await Promise.all([
         supabase.from('planned_workouts').select('date, title, planned_duration_s')
           .eq('user_id', user.id).gte('date', monthStart).lte('date', monthEnd),
@@ -62,7 +69,7 @@ export default function CalendarioPage() {
         supabase.from('weekly_summaries')
           .select('iso_year, iso_week, completed_distance_km, completed_hours, completed_tss, ctl_end, atl_end, tsb_end')
           .eq('user_id', user.id)
-          .gte('week_start_date', monthStart).lte('week_start_date', monthEnd),
+          .gte('week_start_date', weekQueryStartStr).lte('week_start_date', monthEnd),
       ]);
       setPlanned((plannedRes.data ?? []).map(r => ({ date: r.date, title: r.title, duration_s: r.planned_duration_s })));
       setDone((doneRes.data ?? []).map(r => ({ date: r.date, name: r.name ?? '', distance: r.distance, duration: r.duration })));
@@ -138,9 +145,10 @@ export default function CalendarioPage() {
 
           {/* Filas de semanas */}
           {weeks.map((row, rowIdx) => {
-            // Encontrar el primer día real de la fila para obtener la semana ISO
-            const firstReal = row.find(d => d !== null);
-            const weekKey = firstReal ? getIsoWeek(firstReal) : null;
+            // Usar el ÚLTIMO día real de la fila (domingo o último visible)
+            // para que el resumen aparezca en el mes donde acaba la semana.
+            const lastReal = [...row].reverse().find(d => d !== null);
+            const weekKey = lastReal ? getIsoWeek(lastReal) : null;
             const summary = weekKey ? summaryByWeek[weekKey] : null;
 
             return (
@@ -159,8 +167,10 @@ export default function CalendarioPage() {
                       <span className={styles.calDayNum}>{day}</span>
                       {pList.map((p, j) => (
                         <div key={`p-${j}`} className={styles.calPill} title={p.title}>
-                          <span className={styles.calPillDot} style={{ background: '#6366f1' }} />
-                          <span className={styles.calPillText}>{p.title}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
+                            <span className={styles.calPillDot} style={{ background: '#6366f1', flexShrink: 0 }} />
+                            <span className={styles.calPillText}>{p.title}</span>
+                          </div>
                           <span className={styles.calPillMeta}>{fmtDuration(p.duration_s)}</span>
                         </div>
                       ))}
@@ -179,11 +189,12 @@ export default function CalendarioPage() {
 
                 {/* Columna resumen semanal */}
                 {(() => {
-                  // Mostrar resumen solo si la semana ya ha empezado
-                  const firstRealDay = row.find(d => d !== null);
-                  if (!firstRealDay) return <div className={styles.calWeekSummary} />;
-                  const weekStartIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(firstRealDay).padStart(2, '0')}`;
-                  const weekHasStarted = weekStartIso <= today;
+                  // Mostrar resumen solo si la semana ya ha terminado o empezado
+                  // (usamos el último día real de la fila, igual que para el weekKey)
+                  const lastRealDay = [...row].reverse().find(d => d !== null);
+                  if (!lastRealDay) return <div className={styles.calWeekSummary} />;
+                  const weekEndIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastRealDay).padStart(2, '0')}`;
+                  const weekHasStarted = weekEndIso <= today;
                   return (
                     <div className={styles.calWeekSummary}>
                       {summary && weekHasStarted ? (

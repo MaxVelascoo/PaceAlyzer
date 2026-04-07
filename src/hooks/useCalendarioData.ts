@@ -85,7 +85,7 @@ export function useCalendarioData(userId: string |undefined, semanaOffset: numbe
         // 2) Trainings (solo columnas necesarias)
         const { data: trainings, error: trainingsError } = await supabase
           .from('trainings')
-          .select('activity_id, name, date, duration, distance, avgheartrate, weighted_average_watts, altitude, power_stream, hr_stream')
+          .select('activity_id, name, type, date, duration, distance, avgheartrate, weighted_average_watts, altitude, power_stream, hr_stream')
           .eq('user_id', userId)
           .gte('date', startStr)
           .lte('date', endStr);

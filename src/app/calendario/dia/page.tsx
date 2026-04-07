@@ -11,11 +11,192 @@ import PlannedWorkoutCard from '@/components/PlannedWorkoutCard';
 import { usePlannedWorkout } from '@/hooks/usePlannedWorkout';
 import DoneWorkoutCard from '@/components/DoneWorkoutCard';
 import NutritionPanel from '@/components/NutritionPanel';
+import type { DoneTraining } from '@/components/DoneWorkoutCard';
+import type { PlannedWorkout } from '@/components/PlannedWorkoutCard';
 
 import styles from '../calendario.module.css';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function fmtDuration(s: number | null | undefined) {
+  if (!s) return null;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function fmtKm(meters: number | null | undefined) {
+  if (!meters) return null;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+/** Empareja planificados con realizados: 1-a-1 por orden, el resto queda sin pareja */
+function buildSessions(
+  planned: PlannedWorkout[],
+  done: DoneTraining[],
+): Array<{ planned: PlannedWorkout | null; done: DoneTraining | null }> {
+  const len = Math.max(planned.length, done.length);
+  return Array.from({ length: len }, (_, i) => ({
+    planned: planned[i] ?? null,
+    done: done[i] ?? null,
+  }));
+}
+
+// ─── DaySummaryStrip ─────────────────────────────────────────────────────────
+
+function DaySummaryStrip({ done }: { done: DoneTraining[] }) {
+  if (done.length === 0) return null;
+  const totalKm = done.reduce((acc, t) => acc + (t.distance ?? 0), 0);
+  const totalSec = done.reduce((acc, t) => acc + (t.duration ?? 0), 0);
+  const sessions = done.length;
+
+  return (
+    <div className={styles.daySummaryStrip}>
+      <div className={styles.daySummaryStat}>
+        <span className={styles.daySummaryVal}>{sessions}</span>
+        <span className={styles.daySummaryLbl}>{sessions === 1 ? 'sesión' : 'sesiones'}</span>
+      </div>
+      {totalKm > 0 && (
+        <>
+          <div className={styles.daySummaryDivider} />
+          <div className={styles.daySummaryStat}>
+            <span className={styles.daySummaryVal}>{fmtKm(totalKm)}</span>
+            <span className={styles.daySummaryLbl}>distancia</span>
+          </div>
+        </>
+      )}
+      {totalSec > 0 && (
+        <>
+          <div className={styles.daySummaryDivider} />
+          <div className={styles.daySummaryStat}>
+            <span className={styles.daySummaryVal}>{fmtDuration(totalSec)}</span>
+            <span className={styles.daySummaryLbl}>tiempo</span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── SessionBlock ─────────────────────────────────────────────────────────────
+
+function SessionBlock({
+  index,
+  total,
+  planned,
+  done,
+  ftp,
+}: {
+  index: number;
+  total: number;
+  planned: PlannedWorkout | null;
+  done: DoneTraining | null;
+  ftp: number | null;
+}) {
+  const [nutritionOpen, setNutritionOpen] = useState(false);
+  const hasNutrition = !!(
+    planned?.nutrition?.pre?.targets?.length ||
+    planned?.nutrition?.during?.targets?.length ||
+    planned?.nutrition?.post?.targets?.length
+  );
+
+  return (
+    <div className={styles.sessionBlock}>
+      {/* Session label — only show if multiple sessions */}
+      {total > 1 && (
+        <div className={styles.sessionLabel}>
+          <span className={styles.sessionIndex}>Sesión {index + 1}</span>
+        </div>
+      )}
+
+      <div className={styles.sessionGrid}>
+        {/* ── Planificado ── */}
+        <div className={styles.sessionCol}>
+          <div className={styles.sessionColHeader}>
+            <span className={styles.sessionColDot} style={{ background: '#6366f1' }} />
+            <span className={`${styles.sessionColTitle} ${syne.className}`}>Planificado</span>
+            {planned && (
+              <span className={styles.sessionColMeta}>
+                {fmtDuration(planned.planned_duration_s)}
+              </span>
+            )}
+          </div>
+          <div className={styles.sessionColBody}>
+            {planned ? (
+              <PlannedWorkoutCard workout={planned} />
+            ) : (
+              <div className={styles.sessionEmpty}>
+                <p>Sin entreno planificado</p>
+                <Link href="/chat" className={styles.chatButtonSm}>Hablar con Pazey</Link>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Realizado ── */}
+        <div className={styles.sessionCol}>
+          <div className={styles.sessionColHeader}>
+            <span className={styles.sessionColDot} style={{ background: '#FC4C02' }} />
+            <span className={`${styles.sessionColTitle} ${syne.className}`}>Realizado</span>
+            {done && (
+              <span className={styles.sessionColMeta}>
+                {[fmtDuration(done.duration), fmtKm(done.distance)].filter(Boolean).join(' · ')}
+              </span>
+            )}
+          </div>
+          <div className={styles.sessionColBody}>
+            {done ? (
+              <DoneWorkoutCard training={done} ftp={ftp} />
+            ) : (
+              <div className={styles.sessionEmpty}>
+                <p>Sin entreno registrado</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Pazey CTA ── */}
+      <div className={styles.sessionPazeyCta}>
+        <Link href="/chat" className={styles.chatButtonSm}>
+          Hablar con Pazey
+        </Link>
+      </div>
+
+      {/* ── Nutrición de sesión (colapsable) ── */}
+      {planned && (
+        <div className={styles.nutritionAccordion}>
+          <button
+            className={styles.nutritionAccordionToggle}
+            onClick={() => setNutritionOpen(o => !o)}
+            aria-expanded={nutritionOpen}
+          >
+            <span className={styles.sessionColDot} style={{ background: '#22c55e' }} />
+            <span className={`${styles.nutritionAccordionTitle} ${syne.className}`}>
+              Nutrición de sesión
+            </span>
+            {!hasNutrition && (
+              <span className={styles.nutritionAccordionBadge}>Sin datos</span>
+            )}
+            <span className={styles.nutritionAccordionChevron}>
+              {nutritionOpen ? '▲' : '▼'}
+            </span>
+          </button>
+          {nutritionOpen && (
+            <div className={styles.nutritionAccordionBody}>
+              <NutritionPanel nutrition={planned.nutrition ?? null} loading={false} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 function CalendarioContent() {
   const hoy = new Date();
@@ -25,7 +206,6 @@ function CalendarioContent() {
   const [semanaOffset, setSemanaOffset] = useState(() => {
     const dateParam = searchParams?.get('date');
     if (dateParam) {
-      // Calcular el offset de semana respecto a la semana actual
       const target = new Date(dateParam + 'T00:00:00');
       const todayMon = new Date(hoy);
       todayMon.setDate(hoy.getDate() - hoyDia);
@@ -57,7 +237,6 @@ function CalendarioContent() {
     return hoyDia;
   });
 
-  // Guardar en localStorage cuando cambien
   useEffect(() => {
     localStorage.setItem('calendarioSemanaOffset', semanaOffset.toString());
   }, [semanaOffset]);
@@ -67,9 +246,8 @@ function CalendarioContent() {
   }, [diaSeleccionado]);
 
   const user = useUser()?.user;
-
-  // ✅ hook "limpio" (trainingsByDate)
-  const { hasStrava, loading, trainingsByDate, startOfWeek, refetch, userFtp } = useCalendarioData(user?.id, semanaOffset);
+  const { hasStrava, loading, trainingsByDate, startOfWeek, refetch, userFtp } =
+    useCalendarioData(user?.id, semanaOffset);
 
   const mes = startOfWeek.toLocaleString('es-ES', { month: 'long' });
 
@@ -77,80 +255,79 @@ function CalendarioContent() {
     return dias.map((dia, i) => {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
-      // clave LOCAL YYYY-MM-DD
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      return {
-        nombre: dia,
-        numero: d.getDate(),
-        esHoy: semanaOffset === 0 && i === hoyDia,
-        key,
-      };
+      return { nombre: dia, numero: d.getDate(), esHoy: semanaOffset === 0 && i === hoyDia, key };
     });
   }, [startOfWeek, semanaOffset, hoyDia]);
 
   const selectedKey = diasConFechas[diaSeleccionado]?.key;
-  const { loading: loadingPlanned, workout: plannedWorkout } = usePlannedWorkout(user?.id, selectedKey);
-  const entreno = selectedKey ? (trainingsByDate[selectedKey] || [])[0] : undefined;
+  const { loading: loadingPlanned, workouts: plannedWorkouts } = usePlannedWorkout(user?.id, selectedKey);
+  const doneTrainings: DoneTraining[] = selectedKey ? (trainingsByDate[selectedKey] ?? []) : [];
 
-  /** --------- REFRESH / SYNC (PRO) ---------
-   * Estrategia recomendada:
-   * - API server-side: calcula last training date en DB y pide a Strava desde lastDate-1 día
-   * - upsert por activity_id
-   * Aquí en UI solo dispara la sync y luego refetch.
-   */
+  const sessions = useMemo(
+    () => buildSessions(plannedWorkouts, doneTrainings),
+    [plannedWorkouts, doneTrainings],
+  );
+
+  // Sync
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
 
   const handleSync = async () => {
     if (!user?.id || syncing) return;
     setSyncError(null);
-
     try {
       setSyncing(true);
-
-      // Calcular fechas de inicio y fin de la semana actual
       const startStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, '0')}-${String(startOfWeek.getDate()).padStart(2, '0')}`;
       const endDate = new Date(startOfWeek);
       endDate.setDate(startOfWeek.getDate() + 6);
       const endStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-
       const res = await fetch('/api/strava/sync-trainings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: user.id, 
-          startDate: startStr,
-          endDate: endStr
-        }),
+        body: JSON.stringify({ userId: user.id, startDate: startStr, endDate: endStr }),
       });
-
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Error sincronizando entrenos');
-
-      // Refetch data sin recargar la página
       refetch();
     } catch (e) {
-      const error = e as Error;
-      console.error(error);
-      setSyncError(error?.message ?? 'Error sincronizando entrenos');
+      setSyncError((e as Error)?.message ?? 'Error sincronizando entrenos');
     } finally {
       setSyncing(false);
     }
   };
 
+  const isLoading = loading || loadingPlanned;
+  const isEmpty = !isLoading && sessions.length === 0;
+
   return (
     <div className={styles.calendario}>
       <div className={styles.container}>
-        <div style={{ marginBottom: 8 }}>
-          <Link href="/calendario" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: 'rgba(15,15,20,0.55)', textDecoration: 'none', fontFamily: '-apple-system, BlinkMacSystemFont, Helvetica Neue, Helvetica, Arial, sans-serif' }}>
+
+        {/* Back nav */}
+        <div className={styles.diaBackNav}>
+          <Link href="/calendario" className={styles.diaBackLink}>
             ← Volver al calendario
           </Link>
+          <button
+            type="button"
+            className={styles.syncSmall}
+            onClick={handleSync}
+            disabled={syncing || !user?.id || hasStrava === false}
+            title={hasStrava === false ? 'Conecta Strava para sincronizar' : 'Sincronizar entrenos'}
+          >
+            {syncing ? '↻ Sincronizando…' : '↻ Sincronizar'}
+          </button>
         </div>
+
+        {syncError && <div className={styles.syncError}>{syncError}</div>}
+
+        {/* Month label */}
         <div className={`${styles.mes} ${syne.className}`}>
           {mes.charAt(0).toUpperCase() + mes.slice(1)}
         </div>
 
-        {/* WeekHeader */}
+        {/* Week nav */}
         <WeekHeader
           diasConFechas={diasConFechas}
           diaSeleccionado={diaSeleccionado}
@@ -160,84 +337,36 @@ function CalendarioContent() {
           onNext={() => setSemanaOffset(o => o + 1)}
         />
 
-        {/* Botón sync discreto debajo del WeekHeader */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 16, paddingRight: 4 }}>
-          <button
-            type="button"
-            className={styles.syncSmall}
-            onClick={handleSync}
-            disabled={syncing || !user?.id || hasStrava === false}
-            title={hasStrava === false ? 'Conecta Strava para sincronizar' : 'Sincronizar entrenos'}
-          >
-            {syncing ? '↻ Sincronizando…' : '↻ Sincronizar entrenos'}
-          </button>
-        </div>
+        {/* Day summary strip */}
+        {!isLoading && <DaySummaryStrip done={doneTrainings} />}
 
-        {syncError && <div className={styles.syncError}>{syncError}</div>}
-
-        <div className={styles.contenidoDia}>
-          <div className={styles.twoCardsLayout}>
-            {/* IZQUIERDA: Planificado */}
-            <section className={styles.cardBlock}>
-              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO PLANIFICADO</h3>
-
-              <div className={`${styles.cardShell} ${styles.planned}`}>
-                {!user?.id ? (
-                  <div className={styles.emptyState}><p>No hay usuario</p></div>
-                ) : loadingPlanned ? (
-                  <div className={styles.emptyState}><p>Cargando…</p></div>
-                ) : plannedWorkout ? (
-                  <PlannedWorkoutCard workout={plannedWorkout} />
-                ) : (
-                  <div className={styles.emptyState}>
-                    <p>No hay entreno planificado este día</p>
-                    <Link href="/chat" className={`${styles.chatButton} ${syne.className}`}>
-                      Hablar con Pazey
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* DERECHA: Hecho */}
-            <section className={styles.cardBlock}>
-              <h3 className={`${styles.cardHeading} ${syne.className}`}>ENTRENO HECHO</h3>
-
-              <div className={`${styles.cardShell} ${styles.done}`}>
-                {loading ? (
-                  <div className={styles.emptyState}>
-                    <p>Cargando…</p>
-                  </div>
-                ) : !user?.id ? (
-                  <div className={styles.emptyState}>
-                    <p>No hay usuario</p>
-                  </div>
-                ) : hasStrava === false ? (
-                  <div className={styles.emptyState}>
-                    <p>Conecta Strava para ver tus entrenos</p>
-                  </div>
-                ) : entreno ? (
-                  <DoneWorkoutCard training={entreno} ftp={userFtp} />
-                ) : (
-                  <div className={styles.emptyState}>
-                    <p>No hay entreno registrado este día</p>
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-          {/* NUTRICIÓN (full-width debajo de las dos columnas) */}
-          <section className={styles.cardBlock}>
-            <h3 className={`${styles.cardHeading} ${syne.className}`}>NUTRICIÓN</h3>
-
-            <div className={`${styles.cardShell} ${styles.fullWidth}`}>
-              <NutritionPanel 
-                nutrition={plannedWorkout?.nutrition ?? null} 
-                loading={loadingPlanned}
-              />
+        {/* Sessions */}
+        <div className={styles.sessionsContainer}>
+          {isLoading ? (
+            <div className={styles.sessionEmpty} style={{ padding: '48px 0', textAlign: 'center' }}>
+              <p>Cargando…</p>
             </div>
-          </section>
+          ) : isEmpty ? (
+            <div className={styles.diaEmptyDay}>
+              <p className={styles.diaEmptyText}>No hay actividad registrada este día</p>
+              <Link href="/chat" className={`${styles.chatButton} ${syne.className}`}>
+                Planificar con Pazey
+              </Link>
+            </div>
+          ) : (
+            sessions.map((s, i) => (
+              <SessionBlock
+                key={i}
+                index={i}
+                total={sessions.length}
+                planned={s.planned}
+                done={s.done}
+                ftp={userFtp}
+              />
+            ))
+          )}
         </div>
+
       </div>
     </div>
   );

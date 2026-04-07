@@ -1093,11 +1093,12 @@
 
 .calPill {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   background: rgba(99,102,241,0.08);
   border-radius: 6px;
-  padding: 3px 6px;
+  padding: 4px 6px;
   overflow: hidden;
 }
 
@@ -1241,4 +1242,294 @@
 .syncSmall:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════
+   VISTA DÍA — REDISEÑO (sesiones)
+   ═══════════════════════════════════════════════════ */
+
+/* Back nav row */
+.diaBackNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.diaBackLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(15,15,20,0.45);
+  text-decoration: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  transition: color 0.15s;
+}
+
+.diaBackLink:hover {
+  color: rgba(15,15,20,0.75);
+}
+
+/* Day summary strip */
+.daySummaryStrip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #fff;
+  border: 1px solid rgba(15,15,20,0.07);
+  border-radius: 14px;
+  padding: 12px 24px;
+  margin: 16px 0 24px;
+  width: fit-content;
+}
+
+.daySummaryStat {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 0 20px;
+}
+
+.daySummaryStat:first-child {
+  padding-left: 0;
+}
+
+.daySummaryVal {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f0f14;
+  letter-spacing: -0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.daySummaryLbl {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(15,15,20,0.45);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.daySummaryDivider {
+  width: 1px;
+  height: 28px;
+  background: rgba(15,15,20,0.08);
+  flex-shrink: 0;
+}
+
+/* Sessions container */
+.sessionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 60px;
+}
+
+/* Session block */
+.sessionBlock {
+  background: #fff;
+  border: 1px solid rgba(15,15,20,0.07);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(15,15,20,0.05);
+  overflow: hidden;
+}
+
+/* Session label (only shown when multiple sessions) */
+.sessionLabel {
+  padding: 14px 24px 0;
+}
+
+.sessionIndex {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15,15,20,0.35);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Two-column grid inside session */
+.sessionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+/* Each column */
+.sessionCol {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sessionCol:first-child {
+  border-right: 1px solid rgba(15,15,20,0.07);
+}
+
+/* Column header */
+.sessionColHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid rgba(15,15,20,0.06);
+  background: rgba(15,15,20,0.015);
+}
+
+.sessionColDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sessionColTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15,15,20,0.5);
+  flex: 1;
+}
+
+.sessionColMeta {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(15,15,20,0.35);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Column body */
+.sessionColBody {
+  flex: 1;
+  padding: 0;
+}
+
+/* Empty state inside session */
+.sessionEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 24px;
+  color: rgba(15,15,20,0.4);
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  text-align: center;
+  min-height: 200px;
+}
+
+.sessionEmpty p {
+  margin: 0;
+}
+
+/* Small chat button */
+.chatButtonSm {
+  padding: 9px 18px;
+  border-radius: 12px;
+  background: rgb(215, 97, 166);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.chatButtonSm:hover {
+  background: rgba(197, 29, 126);
+  transform: translateY(-1px);
+}
+
+/* Nutrition accordion */
+.nutritionAccordion {
+  border-top: 1px solid rgba(15,15,20,0.07);
+}
+
+.nutritionAccordionToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.nutritionAccordionToggle:hover {
+  background: rgba(15,15,20,0.02);
+}
+
+.nutritionAccordionTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(15,15,20,0.5);
+  flex: 1;
+}
+
+.nutritionAccordionBadge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: rgba(15,15,20,0.3);
+  background: rgba(15,15,20,0.05);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.nutritionAccordionChevron {
+  font-size: 0.65rem;
+  color: rgba(15,15,20,0.3);
+}
+
+.nutritionAccordionBody {
+  padding: 0 0 4px;
+  border-top: 1px solid rgba(15,15,20,0.05);
+}
+
+/* Empty day state */
+.diaEmptyDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.diaEmptyText {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(15,15,20,0.45);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Responsive: stack columns on narrow screens */
+@media (max-width: 860px) {
+  .sessionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sessionCol:first-child {
+    border-right: none;
+    border-bottom: 1px solid rgba(15,15,20,0.07);
+  }
+}
+
+/* Pazey CTA dentro del SessionBlock */
+.sessionPazeyCta {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 20px 0;
+  border-top: 1px solid rgba(15,15,20,0.06);
 }

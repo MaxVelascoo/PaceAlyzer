@@ -5,13 +5,13 @@ import type { PlannedWorkout } from '@/components/PlannedWorkoutCard';
 
 export function usePlannedWorkout(userId: string | undefined, dateKey: string | undefined) {
   const [loading, setLoading] = useState(false);
-  const [workout, setWorkout] = useState<PlannedWorkout | null>(null);
+  const [workouts, setWorkouts] = useState<PlannedWorkout[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
       if (!userId || !dateKey) {
-        setWorkout(null);
+        setWorkouts([]);
         return;
       }
 
@@ -23,13 +23,13 @@ export function usePlannedWorkout(userId: string | undefined, dateKey: string | 
         .select('id,user_id,date,title,description,planned_duration_s,planned_distance_m,structure,status,source,created_at,updated_at,nutrition')
         .eq('user_id', userId)
         .eq('date', dateKey)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
       if (error) {
         setError(error.message);
-        setWorkout(null);
+        setWorkouts([]);
       } else {
-        setWorkout((data as PlannedWorkout) ?? null);
+        setWorkouts((data as PlannedWorkout[]) ?? []);
       }
 
       setLoading(false);
@@ -38,5 +38,6 @@ export function usePlannedWorkout(userId: string | undefined, dateKey: string | 
     run();
   }, [userId, dateKey]);
 
-  return { loading, workout, error };
+  // Backwards-compat: expose first workout as `workout`
+  return { loading, workouts, workout: workouts[0] ?? null, error };
 }
