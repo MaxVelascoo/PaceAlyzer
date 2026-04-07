@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useEffect, useMemo, useState } from 'react';
 import { useUser } from '@/context/userContext';
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
-import { Syne, Space_Grotesk } from 'next/font/google';
+import { Syne } from 'next/font/google';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import styles from './profile.module.css';
 import { useToast } from '@/components/toastProvider/ToastProvider';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700'] });
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: ['400', '500', '600'] });
 
 type PerfilData = {
   firstname: string;
@@ -19,10 +19,60 @@ type PerfilData = {
   telef: string;
   weight: number;
   ftp: number;
-  avatar_url: string | null; // OJO: en UI guardaremos signedUrl; en BD guardas filePath
+  avatar_url: string | null;
   birthdate: string;
   max_heartrate: number;
 };
+
+type MetricCardProps = {
+  label: string;
+  value: string;
+  accent: 'orange' | 'blue' | 'mint' | 'ink';
+  helper?: string;
+};
+
+function MetricCard({ label, value, accent, helper }: MetricCardProps) {
+  return (
+    <article className={`${styles.metricCard} ${styles[`accent_${accent}`]}`}>
+      <span className={styles.metricLabel}>{label}</span>
+      <strong className={styles.metricValue}>{value}</strong>
+      {helper ? <span className={styles.metricHelper}>{helper}</span> : null}
+    </article>
+  );
+}
+
+function formatBirthdate(value: string) {
+  if (!value) return 'No definida';
+
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function calculateAge(value: string) {
+  if (!value) return null;
+
+  const birth = new Date(`${value.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(birth.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const hasHadBirthday =
+    today.getMonth() > birth.getMonth() ||
+    (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+
+  if (!hasHadBirthday) age -= 1;
+  return age >= 0 ? age : null;
+}
+
+function getInitials(firstname: string, lastname: string) {
+  return `${firstname?.[0] ?? ''}${lastname?.[0] ?? ''}`.trim().toUpperCase() || 'PA';
+}
 
 export default function PerfilPage() {
   const user = useUser()?.user;
@@ -44,11 +94,10 @@ export default function PerfilPage() {
     max_heartrate: '',
   });
 
-  // Helper: genera signed url (privado) a partir de filePath guardado en BD
   const getSignedAvatarUrl = async (filePath: string) => {
     const { data, error } = await supabase.storage
       .from('avatars')
-      .createSignedUrl(filePath, 60 * 60); // 1h
+      .createSignedUrl(filePath, 60 * 60);
 
     if (error) throw error;
     return data?.signedUrl ?? null;
@@ -64,7 +113,6 @@ export default function PerfilPage() {
       setLoading(true);
 
       try {
-        // OJO: incluimos avatar_url (filePath) desde users
         const { data, error } = await supabase
           .from('users')
           .select('firstname, lastname, email, telef, ftp, weight, birthdate, max_heartrate, avatar_url')
@@ -79,7 +127,6 @@ export default function PerfilPage() {
         }
 
         if (data) {
-          // data.avatar_url en BD es filePath (ej: "<uid>/123.jpg")
           let signedAvatar: string | null = null;
 
           if (data.avatar_url) {
@@ -87,7 +134,6 @@ export default function PerfilPage() {
               signedAvatar = await getSignedAvatarUrl(data.avatar_url);
             } catch (e) {
               console.warn('No se pudo generar signed URL del avatar:', e);
-              signedAvatar = null;
             }
           }
 
@@ -100,7 +146,7 @@ export default function PerfilPage() {
             ftp: data.ftp ?? 0,
             birthdate: data.birthdate || '',
             max_heartrate: data.max_heartrate ?? 0,
-            avatar_url: signedAvatar, // en UI guardamos la signedUrl para el <img>
+            avatar_url: signedAvatar,
           });
 
           setForm({
@@ -171,16 +217,14 @@ export default function PerfilPage() {
       const file = e.target.files[0];
       const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`; // <- clave para RLS
+      const filePath = `${user.id}/${fileName}`;
 
-      // 1) Subir (privado). upsert true por si repites nombre (aquí no debería)
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // 2) Guardar filePath en la BD (no la URL)
       const { error: dbError } = await supabase
         .from('users')
         .update({ avatar_url: filePath })
@@ -188,9 +232,7 @@ export default function PerfilPage() {
 
       if (dbError) throw dbError;
 
-      // 3) Crear signed URL para mostrarlo en UI
       const signedUrl = await getSignedAvatarUrl(filePath);
-
       setPerfil((prev) => (prev ? { ...prev, avatar_url: signedUrl } : prev));
       toast('Foto subida correctamente');
     } catch (err) {
@@ -208,6 +250,7 @@ export default function PerfilPage() {
 
   const handleFullImport = async () => {
     if (!user || importing) return;
+
     const confirmed = window.confirm(
       'Esto importará todo tu historial de Strava. Puede tardar unos segundos. ¿Continuar?'
     );
@@ -217,7 +260,6 @@ export default function PerfilPage() {
     setImportResult(null);
 
     try {
-      // Sin startDate/endDate → el sync usa toda la historia disponible
       const res = await fetch('/api/strava/sync-trainings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -235,127 +277,194 @@ export default function PerfilPage() {
     }
   };
 
+  const age = useMemo(() => calculateAge(perfil?.birthdate ?? ''), [perfil?.birthdate]);
+  const initials = useMemo(
+    () => getInitials(perfil?.firstname ?? '', perfil?.lastname ?? ''),
+    [perfil?.firstname, perfil?.lastname]
+  );
+
   return (
     <ProtectedRoute>
-      <div className={`${styles.container} ${spaceGrotesk.className}`}>
-        <h2 className={`${styles.heading} ${syne.className}`}>Tu Perfil</h2>
-
-        {loading ? (
-          <p>Cargando datos del perfil...</p>
-        ) : perfil ? (
-          <>
-            <div className={styles.avatarContainer}>
-              {perfil.avatar_url ? (
-                <img src={perfil.avatar_url} alt="Avatar" className={styles.avatar} />
-              ) : (
-                <div className={styles.avatarPlaceholder}>Sube tu foto</div>
-              )}
-
-              <label className={styles.uploadLabel}>
-                {uploading ? 'Cargando...' : 'Cambiar foto'}
-                <input type="file" accept="image/*" onChange={uploadAvatar} hidden />
-              </label>
+      <div className={styles.page}>
+        <div className={styles.shell}>
+          <section className={styles.hero}>
+            <div className={styles.heroCopy}>
+              <p className={styles.eyebrow}>Perfil del atleta</p>
+              <h1 className={`${styles.title} ${syne.className}`}>Tu centro de control personal</h1>
+              <p className={styles.subtitle}>
+                Ajusta tus datos clave, mantén tu identidad al día y prepara la base que usa Pazey
+                para interpretar mejor tu rendimiento.
+              </p>
             </div>
+            <div className={styles.heroGlow} aria-hidden="true" />
+          </section>
 
-            <div className={styles.fields}>
-              <p>
-                <strong>Nombre:</strong> {perfil.firstname}
-              </p>
-              <p>
-                <strong>Apellidos:</strong> {perfil.lastname}
-              </p>
-              <p>
-                <strong>Email:</strong> {perfil.email}
-              </p>
+          {loading ? (
+            <section className={styles.loadingCard}>
+              <p>Cargando datos del perfil...</p>
+            </section>
+          ) : perfil ? (
+            <div className={styles.contentCol}>
+              <section className={styles.profileCard}>
+                <div className={styles.profileTop}>
+                  <div className={styles.identityTop}>
+                    <div className={styles.avatarWrap}>
+                      {perfil.avatar_url ? (
+                        <Image
+                          src={perfil.avatar_url}
+                          alt="Avatar"
+                          className={styles.avatar}
+                          width={120}
+                          height={120}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className={styles.avatarFallback}>{initials}</div>
+                      )}
+                      <span className={styles.avatarRing} aria-hidden="true" />
+                    </div>
 
-              {editing ? (
-                <>
-                  <label>
-                    Teléfono: <input name="telef" value={form.telef} onChange={handleChange} />
-                  </label>
-                  <label>
-                    Peso (kg):{' '}
-                    <input name="weight" value={form.weight} onChange={handleChange} type="number" />
-                  </label>
-                  <label>
-                    FTP (W): <input name="ftp" value={form.ftp} onChange={handleChange} type="number" />
-                  </label>
-                  <label>
-                    Fecha de nacimiento:{' '}
-                    <input name="birthdate" value={form.birthdate} onChange={handleChange} type="date" />
-                  </label>
-                  <label>
-                    FC máxima:{' '}
-                    <input
-                      name="max_heartrate"
-                      value={form.max_heartrate}
-                      onChange={handleChange}
-                      type="number"
-                    />
-                  </label>
-                </>
-              ) : (
-                <>
-                  <p>
-                    <strong>Teléfono:</strong> {perfil.telef}
+                    <div className={styles.identityCopy}>
+                      <p className={styles.memberLabel}>Cuenta activa</p>
+                      <h2 className={`${styles.name} ${syne.className}`}>
+                        {perfil.firstname} {perfil.lastname}
+                      </h2>
+                      <p className={styles.email}>{perfil.email}</p>
+                    </div>
+                  </div>
+
+                  <div className={styles.profileActions}>
+                    <label className={`${styles.primaryAction} ${syne.className}`}>
+                      {uploading ? 'Subiendo foto...' : 'Cambiar foto'}
+                      <input type="file" accept="image/*" onChange={uploadAvatar} hidden />
+                    </label>
+
+                    {!editing ? (
+                      <button onClick={() => setEditing(true)} className={`${styles.secondaryAction} ${syne.className}`}>
+                        Editar perfil
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className={styles.metricGrid}>
+                  <MetricCard
+                    label="FTP"
+                    value={perfil.ftp ? `${perfil.ftp} W` : '—'}
+                    accent="orange"
+                    helper="Potencia umbral"
+                  />
+                  <MetricCard
+                    label="Peso"
+                    value={perfil.weight ? `${perfil.weight} kg` : '—'}
+                    accent="blue"
+                    helper="Para calcular W/kg"
+                  />
+                  <MetricCard
+                    label="FC máxima"
+                    value={perfil.max_heartrate ? `${perfil.max_heartrate} ppm` : '—'}
+                    accent="mint"
+                    helper="Zonas cardiacas"
+                  />
+                  <MetricCard
+                    label="Edad"
+                    value={age != null ? `${age}` : '—'}
+                    accent="ink"
+                    helper="Años"
+                  />
+                </div>
+
+                {editing ? (
+                  <div className={styles.editorOverlay}>
+                    <div className={styles.editorCard}>
+                      <div className={styles.panelHeader}>
+                        <div>
+                          <p className={styles.panelEyebrow}>Datos personales</p>
+                          <h3 className={`${styles.panelTitle} ${syne.className}`}>Editar perfil</h3>
+                        </div>
+                      </div>
+
+                      <div className={styles.formGrid}>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>Teléfono</span>
+                          <input name="telef" value={form.telef} onChange={handleChange} />
+                        </label>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>Peso (kg)</span>
+                          <input name="weight" value={form.weight} onChange={handleChange} type="number" />
+                        </label>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>FTP (W)</span>
+                          <input name="ftp" value={form.ftp} onChange={handleChange} type="number" />
+                        </label>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>Fecha de nacimiento</span>
+                          <input name="birthdate" value={form.birthdate} onChange={handleChange} type="date" />
+                        </label>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>FC máxima</span>
+                          <input
+                            name="max_heartrate"
+                            value={form.max_heartrate}
+                            onChange={handleChange}
+                            type="number"
+                          />
+                        </label>
+                      </div>
+
+                      <div className={styles.buttonRow}>
+                        <button onClick={handleUpdate} className={`${styles.primaryDark} ${syne.className}`}>
+                          Guardar cambios
+                        </button>
+                        <button onClick={() => setEditing(false)} className={`${styles.ghostAction} ${syne.className}`}>
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+
+              <section className={styles.dualPanels}>
+                <article className={styles.panel}>
+                  <p className={styles.panelEyebrow}>Datos e historial</p>
+                  <h3 className={`${styles.panelTitle} ${syne.className}`}>Importación completa de Strava</h3>
+                  <p className={styles.panelText}>
+                    Importa todo tu historial para calcular mejor CTL, ATL y TSB, y darle a Pazey
+                    más contexto real para futuras recomendaciones.
                   </p>
-                  <p>
-                    <strong>Peso:</strong> {perfil.weight} kg
+
+                  <button
+                    onClick={handleFullImport}
+                    disabled={importing}
+                    className={`${styles.importButton} ${syne.className}`}
+                  >
+                    {importing ? 'Importando historial...' : 'Importar historial completo'}
+                  </button>
+
+                  {importResult ? <p className={styles.importResult}>{importResult}</p> : null}
+                </article>
+
+                <article className={`${styles.panel} ${styles.sessionPanel}`}>
+                  <p className={styles.panelEyebrow}>Cuenta</p>
+                  <h3 className={`${styles.panelTitle} ${syne.className}`}>Sesión y acceso</h3>
+                  <p className={styles.panelText}>
+                    Cierra la sesión actual si vas a cambiar de dispositivo o simplemente quieres
+                    salir de PaceAlyzer.
                   </p>
-                  <p>
-                    <strong>FTP:</strong> {perfil.ftp} W
-                  </p>
-                  <p>
-                    <strong>Fecha de nacimiento:</strong> {perfil.birthdate?.slice(0, 10)}
-                  </p>
-                  <p>
-                    <strong>FC máxima:</strong> {perfil.max_heartrate} ppm
-                  </p>
-                </>
-              )}
+
+                  <button onClick={handleLogout} className={`${styles.logoutButton} ${syne.className}`}>
+                    Cerrar sesión
+                  </button>
+                </article>
+              </section>
             </div>
-
-            {editing ? (
-              <div className={styles.buttons}>
-                <button onClick={handleUpdate} className={`${styles.save} ${syne.className}`}>
-                  Guardar cambios
-                </button>
-                <button onClick={() => setEditing(false)} className={`${styles.cancel} ${syne.className}`}>
-                  Cancelar
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setEditing(true)} className={`${styles.edit} ${syne.className}`}>
-                Editar perfil
-              </button>
-            )}
-
-            <button onClick={handleLogout} className={`${styles.logout} ${syne.className}`}>
-              Cerrar sesión
-            </button>
-
-            {/* Sección importación histórica */}
-            <div className={styles.importSection}>
-              <h3 className={`${styles.importTitle} ${syne.className}`}>Datos e historial</h3>
-              <p className={styles.importDesc}>
-                Importa todo tu historial de Strava para obtener métricas precisas de CTL, ATL y TSB.
-                Esta operación solo necesitas hacerla una vez.
-              </p>
-              <button
-                onClick={handleFullImport}
-                disabled={importing}
-                className={`${styles.importBtn} ${syne.className}`}
-              >
-                {importing ? 'Importando historial…' : 'Importar historial completo de Strava'}
-              </button>
-              {importResult && (
-                <p className={styles.importResult}>{importResult}</p>
-              )}
-            </div>
-          </>
-        ) : (
-          <p>No se pudieron cargar los datos del perfil.</p>
-        )}
+          ) : (
+            <section className={styles.loadingCard}>
+              <p>No se pudieron cargar los datos del perfil.</p>
+            </section>
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );
