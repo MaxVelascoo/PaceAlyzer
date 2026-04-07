@@ -738,40 +738,47 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 8px 16px;
-  background: linear-gradient(90deg, #8b1fa9, #e91e63, #ff6b00);
-  border-radius: 40px;
-  margin: 20px auto;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(15,15,20,0.08);
+  box-shadow: 0 2px 8px rgba(15,15,20,0.06);
+  margin: 16px auto;
   max-width: 900px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .nav-button {
-  background: rgba(255, 255, 255, 0.3);
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(15,15,20,0.1);
+  color: rgba(15,15,20,0.6);
+  font-size: 1.2rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(15,15,20,0.05);
+  color: #0f0f14;
 }
 
 .nav-button:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .days-scroll {
   display: flex;
-  gap: 12px;
+  gap: 4px;
   overflow-x: auto;
-  padding: 0 10px;
+  padding: 0 4px;
   scroll-behavior: smooth;
 }
 
@@ -780,20 +787,26 @@ html {
 }
 
 .day-pill {
-  padding: 8px 16px;
-  border-radius: 20px;
+  padding: 6px 14px;
+  border-radius: 10px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1rem;
-  font-weight: 400;
+  color: rgba(15,15,20,0.55);
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s, color 0.3s;
+  transition: background 0.15s, color 0.15s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.day-pill:hover {
+  background: rgba(15,15,20,0.05);
+  color: #0f0f14;
 }
 
 .day-pill.active {
-  background: rgba(255, 255, 255, 0.9);
-  color: #ff6b00;
+  background: #0f0f14;
+  color: #fff;
   font-weight: 700;
 }
 

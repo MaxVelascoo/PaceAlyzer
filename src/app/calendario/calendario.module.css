@@ -1218,3 +1218,27 @@
   gap: 4px;
   margin-bottom: 4px;
 }
+
+/* Botón sync discreto */
+.syncSmall {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(15,15,20,0.4);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  transition: color 0.15s, background 0.15s;
+}
+
+.syncSmall:hover:not(:disabled) {
+  color: rgba(15,15,20,0.75);
+  background: rgba(15,15,20,0.05);
+}
+
+.syncSmall:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

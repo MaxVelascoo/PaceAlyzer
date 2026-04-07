@@ -150,26 +150,26 @@ function CalendarioContent() {
           {mes.charAt(0).toUpperCase() + mes.slice(1)}
         </div>
 
-        {/* ✅ WeekHeader + botón refresh a la derecha */}
-        <div className={styles.weekHeaderRow}>
-          <WeekHeader
-            diasConFechas={diasConFechas}
-            diaSeleccionado={diaSeleccionado}
-            semanaOffset={semanaOffset}
-            onDiaClick={setDiaSeleccionado}
-            onPrev={() => setSemanaOffset(o => o - 1)}
-            onNext={() => setSemanaOffset(o => o + 1)}
-          />
+        {/* WeekHeader */}
+        <WeekHeader
+          diasConFechas={diasConFechas}
+          diaSeleccionado={diaSeleccionado}
+          semanaOffset={semanaOffset}
+          onDiaClick={setDiaSeleccionado}
+          onPrev={() => setSemanaOffset(o => o - 1)}
+          onNext={() => setSemanaOffset(o => o + 1)}
+        />
 
+        {/* Botón sync discreto debajo del WeekHeader */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 16, paddingRight: 4 }}>
           <button
             type="button"
-            className={styles.stravaSync}
+            className={styles.syncSmall}
             onClick={handleSync}
             disabled={syncing || !user?.id || hasStrava === false}
             title={hasStrava === false ? 'Conecta Strava para sincronizar' : 'Sincronizar entrenos'}
-            aria-label="Sincronizar entrenos"
           >
-            {syncing ? 'Sincronizando…' : 'Sincronizar\nentrenos'}
+            {syncing ? '↻ Sincronizando…' : '↻ Sincronizar entrenos'}
           </button>
         </div>
 

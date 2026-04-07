@@ -1,7 +1,4 @@
 import React from 'react';
-import { Syne } from 'next/font/google';
-
-const syne = Syne({ subsets: ['latin'], weight: ['700'] });
 
 export default function WeekHeader({
   diasConFechas,
@@ -25,12 +22,12 @@ export default function WeekHeader({
         {diasConFechas.map((d, i) => (
           <button
             key={d.key}
-            className={`day-pill ${syne.className} ${i === diaSeleccionado ? 'active' : ''}`}
+            className={`day-pill ${i === diaSeleccionado ? 'active' : ''}`}
             onClick={() => onDiaClick(i)}
-            >
-            <div style={{ fontSize: '0.8rem', lineHeight: '1rem', marginBottom: '2px' }}>{d.numero}</div>
+          >
+            <div style={{ fontSize: '0.75rem', lineHeight: '1rem', marginBottom: '2px', opacity: 0.7 }}>{d.numero}</div>
             <div>{d.nombre}</div>
-         </button>
+          </button>
         ))}
       </div>
       <button className="nav-button" onClick={onNext} disabled={semanaOffset === 0}>›</button>
