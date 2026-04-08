@@ -1,12 +1,12 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useUser } from '@/context/userContext';
 import { supabase } from '@/lib/supabaseClient';
 import styles from './calendario.module.css';
 
-type PlannedDay = { date: string; title: string; duration_s: number };
+type PlannedDay = { id: string; date: string; title: string; duration_s: number };
 type DoneDay = { date: string; name: string; distance: number | null; duration: number | null };
 type WeekSummary = {
   iso_year: number; iso_week: number;
@@ -41,6 +41,11 @@ export default function CalendarioPage() {
   const [done, setDone] = useState<DoneDay[]>([]);
   const [weekSummaries, setWeekSummaries] = useState<WeekSummary[]>([]);
 
+  // DnD state
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
+  const dragCounter = useRef<Record<string, number>>({});
+
   const { totalDays, startOffset } = useMemo(() => {
     const first = new Date(year, month, 1);
     const total = new Date(year, month + 1, 0).getDate();
@@ -54,15 +59,12 @@ export default function CalendarioPage() {
   useEffect(() => {
     if (!user?.id) return;
     const load = async () => {
-      // Para las weekly_summaries necesitamos también la semana que empieza
-      // hasta 6 días ANTES del inicio del mes (semana que empieza en el mes anterior
-      // pero cuyo domingo cae dentro de este mes).
       const weekQueryStart = new Date(year, month, 1);
       weekQueryStart.setDate(weekQueryStart.getDate() - 6);
       const weekQueryStartStr = `${weekQueryStart.getFullYear()}-${String(weekQueryStart.getMonth() + 1).padStart(2, '0')}-${String(weekQueryStart.getDate()).padStart(2, '0')}`;
 
       const [plannedRes, doneRes, weekRes] = await Promise.all([
-        supabase.from('planned_workouts').select('date, title, planned_duration_s')
+        supabase.from('planned_workouts').select('id, date, title, planned_duration_s')
           .eq('user_id', user.id).gte('date', monthStart).lte('date', monthEnd),
         supabase.from('trainings').select('date, name, distance, duration')
           .eq('user_id', user.id).gte('date', monthStart).lte('date', monthEnd),
@@ -71,12 +73,78 @@ export default function CalendarioPage() {
           .eq('user_id', user.id)
           .gte('week_start_date', weekQueryStartStr).lte('week_start_date', monthEnd),
       ]);
-      setPlanned((plannedRes.data ?? []).map(r => ({ date: r.date, title: r.title, duration_s: r.planned_duration_s })));
+      setPlanned((plannedRes.data ?? []).map(r => ({ id: r.id, date: r.date, title: r.title, duration_s: r.planned_duration_s })));
       setDone((doneRes.data ?? []).map(r => ({ date: r.date, name: r.name ?? '', distance: r.distance, duration: r.duration })));
       setWeekSummaries(weekRes.data ?? []);
     };
     load();
   }, [user?.id, monthStart, monthEnd]);
+
+  // ── DnD handlers ──────────────────────────────────────────────────────────
+
+  const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
+    e.stopPropagation();
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragId(null);
+    setDragOver(null);
+    dragCounter.current = {};
+  }, []);
+
+  const handleDragEnter = useCallback((e: React.DragEvent, iso: string) => {
+    e.preventDefault();
+    dragCounter.current[iso] = (dragCounter.current[iso] ?? 0) + 1;
+    setDragOver(iso);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent, iso: string) => {
+    e.preventDefault();
+    dragCounter.current[iso] = (dragCounter.current[iso] ?? 1) - 1;
+    if (dragCounter.current[iso] <= 0) {
+      dragCounter.current[iso] = 0;
+      setDragOver(prev => prev === iso ? null : prev);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent, targetIso: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(null);
+    dragCounter.current = {};
+
+    const id = e.dataTransfer.getData('text/plain') || dragId;
+    if (!id) return;
+
+    const item = planned.find(p => p.id === id);
+    if (!item || item.date === targetIso) return;
+
+    // Optimistic update
+    setPlanned(prev => prev.map(p => p.id === id ? { ...p, date: targetIso } : p));
+    setDragId(null);
+
+    // Persist to DB
+    const { error } = await supabase
+      .from('planned_workouts')
+      .update({ date: targetIso })
+      .eq('id', id);
+
+    if (error) {
+      // Rollback
+      setPlanned(prev => prev.map(p => p.id === id ? { ...p, date: item.date } : p));
+      console.error('Error moving workout:', error.message);
+    }
+  }, [dragId, planned]);
+
+  // ── Derived maps ──────────────────────────────────────────────────────────
 
   const plannedByDate = useMemo(() => {
     const m: Record<string, PlannedDay[]> = {};
@@ -90,7 +158,6 @@ export default function CalendarioPage() {
     return m;
   }, [done]);
 
-  // Mapa de semanas ISO → summary
   const summaryByWeek = useMemo(() => {
     const m: Record<string, WeekSummary> = {};
     weekSummaries.forEach(w => { m[`${w.iso_year}-${w.iso_week}`] = w; });
@@ -101,7 +168,6 @@ export default function CalendarioPage() {
   const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
-  // Construir filas de semanas: cada fila = 7 días + 1 columna de resumen
   const weeks = useMemo(() => {
     const cells: (number | null)[] = Array(startOffset).fill(null);
     for (let d = 1; d <= totalDays; d++) cells.push(d);
@@ -111,12 +177,13 @@ export default function CalendarioPage() {
     return rows;
   }, [startOffset, totalDays]);
 
-  const handleDayClick = (day: number) => {
+  const handleDayClick = (day: number, e: React.MouseEvent) => {
+    // Don't navigate if we just dropped something
+    if (dragId) return;
     const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     router.push(`/calendario/dia?date=${iso}`);
   };
 
-  // Obtener ISO week de un día del mes
   const getIsoWeek = (day: number) => {
     const d = new Date(year, month, day);
     const jan4 = new Date(d.getFullYear(), 0, 4);
@@ -137,16 +204,12 @@ export default function CalendarioPage() {
             <button className={styles.calNavBtn} onClick={nextMonth}>›</button>
           </div>
 
-          {/* Cabecera: 7 días + columna resumen */}
           <div className={styles.calWeekRow}>
             {DAYS.map(d => <div key={d} className={styles.calWeekLabel}>{d}</div>)}
             <div className={styles.calWeekLabel} style={{ textAlign: 'center' }}>Resumen</div>
           </div>
 
-          {/* Filas de semanas */}
           {weeks.map((row, rowIdx) => {
-            // Usar el ÚLTIMO día real de la fila (domingo o último visible)
-            // para que el resumen aparezca en el mes donde acaba la semana.
             const lastReal = [...row].reverse().find(d => d !== null);
             const weekKey = lastReal ? getIsoWeek(lastReal) : null;
             const summary = weekKey ? summaryByWeek[weekKey] : null;
@@ -157,16 +220,32 @@ export default function CalendarioPage() {
                   if (!day) return <div key={`e-${rowIdx}-${colIdx}`} className={styles.calCellEmpty} />;
                   const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                   const isToday = iso === today;
+                  const isDropTarget = dragOver === iso;
                   const pList = plannedByDate[iso] ?? [];
                   const dList = doneByDate[iso] ?? [];
+
                   return (
-                    <div key={iso}
-                      className={`${styles.calCell} ${isToday ? styles.calCellToday : ''}`}
-                      onClick={() => handleDayClick(day)}
+                    <div
+                      key={iso}
+                      className={`${styles.calCell} ${isToday ? styles.calCellToday : ''} ${isDropTarget ? styles.calCellDropTarget : ''}`}
+                      onClick={(e) => handleDayClick(day, e)}
+                      onDragEnter={(e) => handleDragEnter(e, iso)}
+                      onDragLeave={(e) => handleDragLeave(e, iso)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, iso)}
                     >
                       <span className={styles.calDayNum}>{day}</span>
-                      {pList.map((p, j) => (
-                        <div key={`p-${j}`} className={styles.calPill} title={p.title}>
+
+                      {pList.map((p) => (
+                        <div
+                          key={p.id}
+                          className={`${styles.calPill} ${dragId === p.id ? styles.calPillDragging : ''}`}
+                          title={p.title}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, p.id)}
+                          onDragEnd={handleDragEnd}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
                             <span className={styles.calPillDot} style={{ background: '#6366f1', flexShrink: 0 }} />
                             <span className={styles.calPillText}>{p.title}</span>
@@ -174,6 +253,7 @@ export default function CalendarioPage() {
                           <span className={styles.calPillMeta}>{fmtDuration(p.duration_s)}</span>
                         </div>
                       ))}
+
                       {dList.map((d, j) => (
                         <div key={`d-${j}`} className={`${styles.calPill} ${styles.calPillDone}`} title={d.name}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
@@ -189,8 +269,6 @@ export default function CalendarioPage() {
 
                 {/* Columna resumen semanal */}
                 {(() => {
-                  // Mostrar resumen solo si la semana ya ha terminado o empezado
-                  // (usamos el último día real de la fila, igual que para el weekKey)
                   const lastRealDay = [...row].reverse().find(d => d !== null);
                   if (!lastRealDay) return <div className={styles.calWeekSummary} />;
                   const weekEndIso = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastRealDay).padStart(2, '0')}`;
@@ -198,37 +276,37 @@ export default function CalendarioPage() {
                   return (
                     <div className={styles.calWeekSummary}>
                       {summary && weekHasStarted ? (
-                    <>
-                      <div className={styles.calWeekRow1}>
-                        <div className={styles.calWeekStat}>
-                          <span className={styles.calWeekStatVal}>{Math.round(summary.completed_distance_km)}</span>
-                          <span className={styles.calWeekStatLbl}>km</span>
-                        </div>
-                        <div className={styles.calWeekStat}>
-                          <span className={styles.calWeekStatVal}>{fmtHours(summary.completed_hours)}</span>
-                        </div>
-                        <div className={styles.calWeekStat}>
-                          <span className={styles.calWeekStatVal}>{Math.round(summary.completed_tss)}</span>
-                          <span className={styles.calWeekStatLbl}>TSS</span>
-                        </div>
-                      </div>
-                      <div className={styles.calWeekDivider} />
-                      <div className={styles.calWeekRow2}>
-                        <div className={styles.calWeekStat}>
-                          <span className={styles.calWeekStatVal} style={{ color: '#4a90d9' }}>{summary.ctl_end?.toFixed(0) ?? '—'}</span>
-                          <span className={styles.calWeekStatLbl}>CTL</span>
-                        </div>
-                        <div className={styles.calWeekStat}>
-                          <span className={styles.calWeekStatVal} style={{ color: '#e05c5c' }}>{summary.atl_end?.toFixed(0) ?? '—'}</span>
-                          <span className={styles.calWeekStatLbl}>ATL</span>
-                        </div>
-                        <div className={styles.calWeekStat}>
-                          <span className={styles.calWeekStatVal} style={{ color: '#5cb85c' }}>{summary.tsb_end != null ? (summary.tsb_end > 0 ? '+' : '') + summary.tsb_end.toFixed(0) : '—'}</span>
-                          <span className={styles.calWeekStatLbl}>TSB</span>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
+                        <>
+                          <div className={styles.calWeekRow1}>
+                            <div className={styles.calWeekStat}>
+                              <span className={styles.calWeekStatVal}>{Math.round(summary.completed_distance_km)}</span>
+                              <span className={styles.calWeekStatLbl}>km</span>
+                            </div>
+                            <div className={styles.calWeekStat}>
+                              <span className={styles.calWeekStatVal}>{fmtHours(summary.completed_hours)}</span>
+                            </div>
+                            <div className={styles.calWeekStat}>
+                              <span className={styles.calWeekStatVal}>{Math.round(summary.completed_tss)}</span>
+                              <span className={styles.calWeekStatLbl}>TSS</span>
+                            </div>
+                          </div>
+                          <div className={styles.calWeekDivider} />
+                          <div className={styles.calWeekRow2}>
+                            <div className={styles.calWeekStat}>
+                              <span className={styles.calWeekStatVal} style={{ color: '#4a90d9' }}>{summary.ctl_end?.toFixed(0) ?? '—'}</span>
+                              <span className={styles.calWeekStatLbl}>CTL</span>
+                            </div>
+                            <div className={styles.calWeekStat}>
+                              <span className={styles.calWeekStatVal} style={{ color: '#e05c5c' }}>{summary.atl_end?.toFixed(0) ?? '—'}</span>
+                              <span className={styles.calWeekStatLbl}>ATL</span>
+                            </div>
+                            <div className={styles.calWeekStat}>
+                              <span className={styles.calWeekStatVal} style={{ color: '#5cb85c' }}>{summary.tsb_end != null ? (summary.tsb_end > 0 ? '+' : '') + summary.tsb_end.toFixed(0) : '—'}</span>
+                              <span className={styles.calWeekStatLbl}>TSB</span>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
                         <span className={styles.calWeekEmpty}>—</span>
                       )}
                     </div>

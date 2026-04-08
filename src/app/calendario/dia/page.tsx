@@ -160,11 +160,13 @@ function SessionBlock({
       </div>
 
       {/* ── Pazey CTA ── */}
-      <div className={styles.sessionPazeyCta}>
-        <Link href="/chat" className={styles.chatButtonSm}>
-          Hablar con Pazey
-        </Link>
-      </div>
+      {planned && (
+        <div className={styles.sessionPazeyCta}>
+          <Link href="/chat" className={styles.chatButtonSm}>
+            Hablar con Pazey
+          </Link>
+        </div>
+      )}
 
       {/* ── Nutrición de sesión (colapsable) ── */}
       {planned && (

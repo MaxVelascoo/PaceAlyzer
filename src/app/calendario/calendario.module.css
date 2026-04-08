@@ -1529,7 +1529,32 @@
 /* Pazey CTA dentro del SessionBlock */
 .sessionPazeyCta {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  padding: 10px 20px 0;
+  padding: 10px 20px;
   border-top: 1px solid rgba(15,15,20,0.06);
+}
+
+/* ── Drag and Drop ── */
+
+/* Celda que está siendo hover durante un drag */
+.calCellDropTarget {
+  border-color: #6366f1 !important;
+  background: rgba(99, 102, 241, 0.06) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+}
+
+/* Pastilla siendo arrastrada */
+.calPillDragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+/* Cursor grab en pastillas planificadas */
+.calPill[draggable="true"] {
+  cursor: grab;
+}
+
+.calPill[draggable="true"]:active {
+  cursor: grabbing;
 }
