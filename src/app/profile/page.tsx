@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { Syne } from 'next/font/google';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import UserAvatar from '@/components/UserAvatar';
 import styles from './profile.module.css';
 import { useToast } from '@/components/toastProvider/ToastProvider';
 
@@ -309,20 +310,12 @@ export default function PerfilPage() {
                 <div className={styles.profileTop}>
                   <div className={styles.identityTop}>
                     <div className={styles.avatarWrap}>
-                      {perfil.avatar_url ? (
-                        <Image
-                          src={perfil.avatar_url}
-                          alt="Avatar"
-                          className={styles.avatar}
-                          width={120}
-                          height={120}
-                          unoptimized
-                        />
-                      ) : (
-                        <div className={styles.avatarFallback}>{initials}</div>
-                      )}
-                      <span className={styles.avatarRing} aria-hidden="true" />
-                    </div>
+                    <UserAvatar
+                      avatarUrl={perfil.avatar_url}
+                      initials={initials}
+                      size={88}
+                    />
+                  </div>
 
                     <div className={styles.identityCopy}>
                       <p className={styles.memberLabel}>Cuenta activa</p>

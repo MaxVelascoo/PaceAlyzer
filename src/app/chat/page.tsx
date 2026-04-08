@@ -21,6 +21,7 @@ export default function ChatPage() {
   const user = useUser()?.user;
   const [selectedDate, setSelectedDate] = useState<string>(isoTodayLocal());
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [userInitials, setUserInitials] = useState<string>('');
 
   // Obtener entreno planificado del día seleccionado
   const { loading: loadingPlanned, workout: plannedWorkout } = usePlannedWorkout(user?.id, selectedDate);
@@ -33,7 +34,7 @@ export default function ChatPage() {
       try {
         const { data, error } = await supabase
           .from('users')
-          .select('avatar_url')
+          .select('avatar_url, firstname, lastname')
           .eq('id', user.id)
           .single();
 
@@ -42,11 +43,15 @@ export default function ChatPage() {
           return;
         }
 
+        // Iniciales como fallback
+        const first = (data?.firstname?.[0] ?? '').toUpperCase();
+        const last = (data?.lastname?.[0] ?? '').toUpperCase();
+        setUserInitials(`${first}${last}` || '?');
+
         if (data?.avatar_url) {
-          // Generar signed URL para el avatar
           const { data: signedData, error: signedError } = await supabase.storage
             .from('avatars')
-            .createSignedUrl(data.avatar_url, 60 * 60); // 1 hora
+            .createSignedUrl(data.avatar_url, 60 * 60);
 
           if (signedError) {
             console.error('Error generating signed URL:', signedError);
@@ -183,7 +188,7 @@ export default function ChatPage() {
           />
 
           <div className={styles.threadCol}>
-            <ChatThread messages={messages} onAction={handleAction} userAvatarUrl={userAvatarUrl} isThinking={isThinking} />
+            <ChatThread messages={messages} onAction={handleAction} userAvatarUrl={userAvatarUrl} userInitials={userInitials} isThinking={isThinking} />
             <MessageComposer onSend={handleSend} placeholder="Escribe tu petición…" />
           </div>
         </div>

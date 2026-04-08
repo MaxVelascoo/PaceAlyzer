@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
+import UserAvatar from '@/components/UserAvatar';
 import styles from '@/app/chat/chat.module.css';
 
 type ActionVariant = 'primary' | 'ghost';
@@ -24,11 +25,13 @@ export default function ChatThread({
   messages,
   onAction,
   userAvatarUrl,
+  userInitials,
   isThinking,
 }: {
   messages: ChatMessage[];
   onAction: (actionId: string) => void;
   userAvatarUrl?: string | null;
+  userInitials?: string;
   isThinking?: boolean;
 }) {
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -131,17 +134,11 @@ export default function ChatThread({
 
             {m.role === 'user' && (
               <div className={styles.avatarUser} aria-hidden>
-                {userAvatarUrl ? (
-                  <Image 
-                    src={userAvatarUrl} 
-                    alt="" 
-                    width={38} 
-                    height={38}
-                    className={styles.avatarUserImage}
-                  />
-                ) : (
-                  '🙂'
-                )}
+                <UserAvatar
+                  avatarUrl={userAvatarUrl}
+                  initials={userInitials || '?'}
+                  size={38}
+                />
               </div>
             )}
           </div>
