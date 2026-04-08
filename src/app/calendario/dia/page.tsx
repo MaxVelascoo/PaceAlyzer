@@ -264,7 +264,10 @@ function CalendarioContent() {
 
   const selectedKey = diasConFechas[diaSeleccionado]?.key;
   const { loading: loadingPlanned, workouts: plannedWorkouts } = usePlannedWorkout(user?.id, selectedKey);
-  const doneTrainings: DoneTraining[] = selectedKey ? (trainingsByDate[selectedKey] ?? []) : [];
+  const doneTrainings: DoneTraining[] = useMemo(
+    () => (selectedKey ? (trainingsByDate[selectedKey] ?? []) : []),
+    [selectedKey, trainingsByDate],
+  );
 
   const sessions = useMemo(
     () => buildSessions(plannedWorkouts, doneTrainings),

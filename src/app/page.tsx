@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Syne } from 'next/font/google';
 import { useUser } from '@/context/userContext';
@@ -181,7 +180,7 @@ export default function HomePage() {
             <p className="lp-eyebrow lp-eyebrow-dark">Pazey en acción</p>
             <h2 className={`lp-h2 ${syne.className}`}>Tu entrenador siempre disponible</h2>
             <p className="lp-showcase-sub">
-              Escríbele en lenguaje natural. "Hazme un rodaje suave para mañana" o "Cambia el martes por un descanso activo".
+              Escríbele en lenguaje natural. &ldquo;Hazme un rodaje suave para mañana&rdquo; o &ldquo;Cambia el martes por un descanso activo&rdquo;.
               Pazey entiende el contexto, consulta tus métricas y actúa.
             </p>
             <button className={`lp-btn-dark ${syne.className}`} onClick={handleCTA}>
@@ -190,7 +189,7 @@ export default function HomePage() {
           </div>
           <div className="lp-showcase-img-wrap">
             <Image
-              src="/mockup-dashboard2.png"
+              src="/mockup-ChatPage.png"
               alt="Chat con Pazey"
               width={700}
               height={480}

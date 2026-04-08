@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Image from 'next/image';
 import styles from '@/app/calendario/calendario.module.css';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -344,7 +345,7 @@ export default function DoneWorkoutCard({
           className={styles.stravaButton}
           title="Ver en Strava"
         >
-          <img src="/view_on_strava_Button.png" alt="Ver en Strava" className={styles.stravaButtonImg} />
+          <Image src="/view_on_strava_Button.png" alt="Ver en Strava" width={120} height={32} className={styles.stravaButtonImg} />
         </a>
       </div>
 

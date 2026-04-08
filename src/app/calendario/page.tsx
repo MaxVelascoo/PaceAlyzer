@@ -78,7 +78,7 @@ export default function CalendarioPage() {
       setWeekSummaries(weekRes.data ?? []);
     };
     load();
-  }, [user?.id, monthStart, monthEnd]);
+  }, [user?.id, monthStart, monthEnd, month, year]);
 
   // ── DnD handlers ──────────────────────────────────────────────────────────
 
@@ -177,8 +177,7 @@ export default function CalendarioPage() {
     return rows;
   }, [startOffset, totalDays]);
 
-  const handleDayClick = (day: number, e: React.MouseEvent) => {
-    // Don't navigate if we just dropped something
+  const handleDayClick = (day: number) => {
     if (dragId) return;
     const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     router.push(`/calendario/dia?date=${iso}`);
@@ -228,7 +227,7 @@ export default function CalendarioPage() {
                     <div
                       key={iso}
                       className={`${styles.calCell} ${isToday ? styles.calCellToday : ''} ${isDropTarget ? styles.calCellDropTarget : ''}`}
-                      onClick={(e) => handleDayClick(day, e)}
+                      onClick={() => handleDayClick(day)}
                       onDragEnter={(e) => handleDragEnter(e, iso)}
                       onDragLeave={(e) => handleDragLeave(e, iso)}
                       onDragOver={handleDragOver}
