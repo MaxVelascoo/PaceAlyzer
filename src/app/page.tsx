@@ -137,7 +137,7 @@ export default function HomePage() {
           <div className="lp-hero-visual">
             <div className="lp-mockup-glow" aria-hidden />
             <Image
-              src="/mockup-DayPage.png"
+              src="/mockup-DayPagee.png"
               alt="PaceAlyzer dashboard"
               width={1200}
               height={800}
