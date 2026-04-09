@@ -1,5 +1,6 @@
 import './styles.css';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Syne } from 'next/font/google';
 import { UserProvider } from '@/context/userContext';
 import Header from '@/components/header';
@@ -63,7 +64,7 @@ export default function RootLayout({
             <div className="footer-bottom">
               <div className="footer-bottom-content">
                 <p>© 2025 by PaceAlyzer.</p>
-                <img
+                <Image
                   src="/api_logo_pwrdBy_strava_stack_white.png"
                   alt="Powered by Strava"
                   width={120}

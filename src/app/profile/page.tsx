@@ -41,17 +41,6 @@ function MetricCard({ label, value, accent, helper }: MetricCardProps) {
   );
 }
 
-function formatBirthdate(_value: string) {
-  if (!_value) return 'No definida';
-  const date = new Date(`${_value.slice(0, 10)}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return _value.slice(0, 10);
-  return new Intl.DateTimeFormat('es-ES', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-}
-
 function calculateAge(value: string) {
   if (!value) return null;
 
